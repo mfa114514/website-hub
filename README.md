@@ -4,6 +4,9 @@
 
 这个公开发行版不包含任何个人网站、分类、标签、访问记录或私人发布配置。首次打开为空白状态，由使用者自行添加内容。
 
+- [直接在线使用](https://mfa114514.github.io/website-hub/)
+- [下载最新发行包](https://github.com/mfa114514/website-hub/releases/latest)
+
 ## 主要功能
 
 - 添加、编辑、删除、搜索和打开网站；
