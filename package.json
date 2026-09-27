@@ -1,0 +1,9 @@
+{
+  "name": "website-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local-first website bookmark manager",
+  "scripts": {
+    "test": "node verification/verify-static.mjs"
+  }
+}

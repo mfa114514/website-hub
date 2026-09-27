@@ -1,0 +1,2621 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="本机优先的常用网站管理工具，支持分类、标签、统计、批量导入、完整备份和自定义排序。">
+  <meta name="theme-color" content="#10233f">
+  <title>常用网站</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2310233f'/%3E%3Cpath d='M18 20h28v24H18z' fill='none' stroke='%23fff' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M25 14v12M39 14v12M18 29h28' stroke='%2347d7c9' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #10233f;
+      --ink-soft: #40516a;
+      --paper: #f4f7fb;
+      --surface: #ffffff;
+      --line: #d8e0ea;
+      --line-strong: #b9c6d6;
+      --accent: #0d7f78;
+      --accent-dark: #08645f;
+      --accent-soft: #e0f5f2;
+      --danger: #b42318;
+      --danger-soft: #fff0ee;
+      --shadow: 0 18px 48px rgba(18, 39, 67, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; background: var(--paper); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(16, 35, 63, 0.035) 1px, transparent 1px),
+        linear-gradient(rgba(16, 35, 63, 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+    }
+
+    button, input, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid rgba(13, 127, 120, 0.28);
+      outline-offset: 2px;
+    }
+
+    .app-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 54px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 15px;
+      background: var(--ink);
+      box-shadow: 0 10px 24px rgba(16, 35, 63, 0.2);
+    }
+
+    .brand-mark svg { width: 28px; height: 28px; }
+    .brand h1 { margin: 0; font-size: clamp(1.55rem, 3vw, 2rem); letter-spacing: -0.03em; }
+    .brand p { margin: 4px 0 0; color: var(--ink-soft); font-size: 0.92rem; }
+
+    .storage-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+
+    .storage-badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .workspace {
+      overflow: hidden;
+      border: 1px solid rgba(185, 198, 214, 0.84);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .toolbar-actions { display: flex; align-items: center; gap: 9px; }
+    .bulk-button {
+      min-height: 46px;
+      padding: 10px 15px;
+      border: 1px solid var(--line-strong);
+      border-radius: 13px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .bulk-button:hover,
+    .bulk-button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); }
+
+    .search-wrap { position: relative; max-width: 560px; }
+    .search-wrap svg {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      width: 19px;
+      height: 19px;
+      transform: translateY(-50%);
+      color: #718096;
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 15px 10px 44px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 1rem;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .search-input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 4px rgba(13, 127, 120, 0.1); outline: none; }
+
+    .primary-button,
+    .secondary-button,
+    .danger-button,
+    .icon-button,
+    .open-button {
+      border: 0;
+      cursor: pointer;
+      transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+
+    .primary-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 46px;
+      padding: 10px 17px;
+      border-radius: 13px;
+      background: var(--ink);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 8px 18px rgba(16, 35, 63, 0.16);
+    }
+
+    .primary-button:hover { background: #193556; transform: translateY(-1px); }
+    .primary-button svg { width: 18px; height: 18px; }
+
+    .filterbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+
+    .category-tabs {
+      display: flex;
+      flex: 1;
+      gap: 7px;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      padding: 2px 0;
+    }
+
+    .filter-pill,
+    .manage-button,
+    .view-button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink-soft);
+      cursor: pointer;
+    }
+
+    .filter-pill {
+      min-height: 35px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+
+    .filter-pill:hover,
+    .filter-pill.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); }
+
+    .filter-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+
+    .tag-select {
+      min-height: 36px;
+      max-width: 150px;
+      padding: 7px 30px 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+    }
+
+    .manage-button {
+      min-height: 36px;
+      padding: 7px 11px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .manage-button:hover { border-color: var(--line-strong); background: var(--paper); color: var(--ink); }
+
+    .view-switch {
+      display: flex;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--paper);
+    }
+
+    .view-button {
+      width: 32px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border-color: transparent;
+      border-radius: 8px;
+      background: transparent;
+    }
+
+    .view-button:hover { color: var(--ink); }
+    .view-button.active { background: #fff; color: var(--accent-dark); box-shadow: 0 2px 7px rgba(16, 35, 63, 0.1); }
+    .view-button svg { width: 17px; height: 17px; }
+
+    .recent-controls,
+    .bulk-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #f3f8fb;
+    }
+    .recent-controls.visible,
+    .bulk-bar.visible { display: flex; }
+    .recent-controls p { margin: 0 auto 0 0; color: var(--ink-soft); font-size: 0.82rem; }
+    .time-presets { display: flex; gap: 6px; }
+    .time-input {
+      min-height: 36px;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+    }
+    .bulk-bar strong { margin-right: auto; }
+    .bulk-bar button { min-height: 36px; }
+
+    .summary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px 4px;
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+    }
+
+    .summary-row strong { color: var(--ink); }
+    .privacy-note { display: inline-flex; align-items: center; gap: 7px; }
+    .privacy-note svg { width: 16px; height: 16px; }
+
+    .site-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      padding: 18px 22px 26px;
+    }
+
+    .site-card {
+      position: relative;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 238px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 7px 22px rgba(16, 35, 63, 0.045);
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .site-card:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: 0 14px 32px rgba(16, 35, 63, 0.1); }
+    .site-card.featured { border-color: #e4c56b; box-shadow: 0 7px 22px rgba(157, 112, 0, 0.09); }
+    .density-1 .site-grid.view-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .density-2 .site-grid.view-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .density-4 .site-grid.view-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .density-5 .site-grid.view-grid { grid-template-columns: 1fr; }
+    .density-1 .site-card { min-height: 196px; padding: 12px; }
+    .density-2 .site-card { min-height: 210px; padding: 14px; }
+    .density-4 .site-card { min-height: 252px; padding: 21px; }
+    .density-5 .site-card { min-height: 0; padding: 24px; }
+    .density-1 .site-details { margin: 11px 0; }
+    .density-2 .site-details { margin: 14px 0 13px; }
+    .density-4 .site-details, .density-5 .site-details { margin: 24px 0 22px; }
+    .density-1 .category-and-tags, .density-2 .category-and-tags { margin-top: 9px; }
+    .density-1 .detail-row, .density-2 .detail-row { grid-template-columns: 54px minmax(0, 1fr); gap: 5px; }
+    .density-1 .card-head, .density-2 .card-head { flex-wrap: wrap; }
+    .density-1 .card-head > .site-identity, .density-2 .card-head > .site-identity { width: 100%; }
+    .density-1 .card-actions, .density-2 .card-actions { width: 100%; justify-content: flex-end; }
+
+    .selection-box {
+      display: none;
+      width: 32px;
+      height: 42px;
+      place-items: center;
+      flex: 0 0 auto;
+      cursor: pointer;
+    }
+    .bulk-mode .selection-box { display: grid; }
+    .selection-box input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+    .site-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(13, 127, 120, 0.11); }
+
+    .category-and-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
+    .category-badge,
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      padding: 4px 8px;
+      border-radius: 7px;
+      font-size: 0.74rem;
+      line-height: 1;
+    }
+    .category-badge { background: #edf2f8; color: #42566f; font-weight: 700; }
+    .tag-chip { border: 1px solid #d8e9e7; background: #f5fbfa; color: #40706c; }
+
+    .site-grid.view-list { display: block; }
+    .view-list .site-card {
+      display: grid;
+      grid-template-columns: minmax(230px, 1.5fr) minmax(230px, 1fr) 118px;
+      align-items: center;
+      min-height: 0;
+      margin-bottom: 10px;
+      padding: 14px 16px;
+    }
+    .view-list .site-card:hover { transform: translateY(-1px); }
+    .view-list .site-details { margin: 0 18px; }
+    .view-list .detail-row { margin: 5px 0; }
+    .view-list .category-and-tags { margin-top: 9px; }
+    .view-list .open-button { width: 118px; }
+
+    .category-layout {
+      display: grid;
+      grid-template-columns: 210px minmax(0, 1fr);
+      gap: 0;
+      padding: 18px 22px 26px;
+    }
+
+    .category-sidebar {
+      padding-right: 16px;
+      border-right: 1px solid var(--line);
+    }
+
+    .category-sidebar-title { margin: 0 0 10px; color: #7a8798; font-size: 0.76rem; font-weight: 750; letter-spacing: 0.08em; }
+    .sidebar-category {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 40px;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink-soft);
+      cursor: pointer;
+      text-align: left;
+    }
+    .sidebar-category:hover,
+    .sidebar-category.active { background: var(--accent-soft); color: var(--accent-dark); }
+    .sidebar-category span:last-child { color: #8492a5; font-size: 0.76rem; }
+    .category-content { min-width: 0; padding-left: 18px; }
+    .category-content .site-card { margin-bottom: 12px; min-height: 0; }
+
+    .taxonomy-section + .taxonomy-section { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+    .taxonomy-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+    .taxonomy-heading h3 { margin: 0; font-size: 1rem; }
+    .taxonomy-heading p { margin: 0; color: #78869a; font-size: 0.78rem; }
+    .inline-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; margin-bottom: 12px; }
+    .inline-add input,
+    .taxonomy-row input {
+      min-width: 0;
+      min-height: 39px;
+      padding: 8px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      color: var(--ink);
+    }
+    .taxonomy-list { display: grid; gap: 8px; }
+    .taxonomy-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 7px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #fbfcfe;
+    }
+    .small-action { width: 38px; height: 38px; }
+    .taxonomy-empty { margin: 0; padding: 16px; border: 1px dashed var(--line); border-radius: 11px; color: #78869a; font-size: 0.84rem; text-align: center; }
+
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .site-identity { min-width: 0; display: flex; align-items: center; gap: 12px; }
+
+    .site-icon {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-weight: 800;
+      font-size: 1.08rem;
+      text-transform: uppercase;
+      overflow: hidden;
+    }
+    .site-icon img {
+      position: absolute;
+      inset: 7px;
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      background: var(--accent-soft);
+    }
+    .site-icon .site-icon-fallback { display: block; }
+    .site-icon.failed img { display: none; }
+    .site-icon.custom img { inset: 0; width: 100%; height: 100%; object-fit: cover; background: #fff; }
+    .site-icon.custom { background: #fff; border: 1px solid var(--line); }
+
+    .view-list .site-card.recent-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) minmax(170px, .7fr) auto;
+      align-items: center;
+      gap: 16px;
+      min-height: 0;
+    }
+    .bulk-mode .site-card.recent-card {
+      grid-template-columns: auto auto minmax(0, 1fr) minmax(170px, .7fr) auto;
+    }
+    .recent-rank { min-width: 34px; color: #8a97a8; font-size: 1.2rem; font-weight: 800; text-align: center; }
+    .visit-stats { min-width: 0; }
+    .visit-stats strong { display: block; margin-bottom: 7px; font-size: 1rem; }
+    .visit-stats span { color: var(--ink-soft); font-size: 0.78rem; }
+    .visit-bar { height: 7px; margin-top: 9px; overflow: hidden; border-radius: 999px; background: #e7edf4; }
+    .visit-bar span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+    .recent-card .open-button { width: 112px; }
+
+    .icon-picker { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: center; }
+    .icon-preview {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--paper);
+      color: var(--ink-soft);
+      font-weight: 800;
+    }
+    .icon-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .icon-picker-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .file-button { position: relative; overflow: hidden; }
+    .file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+    #importDialog { width: min(820px, calc(100% - 28px)); }
+    #backupDialog { width: min(780px, calc(100% - 28px)); }
+    .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .backup-card { display: flex; flex-direction: column; gap: 13px; min-width: 0; padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: #fbfcfe; }
+    .backup-card h3 { margin: 0; font-size: 1rem; }
+    .backup-card p { margin: 0; color: var(--ink-soft); font-size: 0.84rem; line-height: 1.6; }
+    .backup-summary { padding: 11px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-dark); font-size: 0.82rem; font-weight: 700; }
+    .restore-preview { display: none; padding: 12px; border: 1px solid #b9d8d4; border-radius: 11px; background: #f1fbf9; color: var(--ink-soft); font-size: 0.82rem; line-height: 1.65; }
+    .restore-preview.visible { display: block; }
+    .restore-preview strong { color: var(--ink); }
+    .restore-warning { padding: 12px; border: 1px solid #ecc7c2; border-radius: 11px; background: #fff6f4; color: #7c2c25; font-size: 0.82rem; line-height: 1.6; }
+    .restore-confirm { display: none; }
+    .restore-confirm.visible { display: flex; }
+    .import-source-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; }
+    .import-source-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fbfcfe;
+    }
+    .import-source-card h3 { margin: 0 0 7px; font-size: .98rem; }
+    .import-source-card p { margin: 0 0 13px; color: var(--ink-soft); font-size: .82rem; line-height: 1.55; }
+    .import-file-name { min-height: 22px; margin-top: 9px !important; color: var(--accent-dark) !important; font-weight: 700; word-break: break-all; }
+    .import-textarea { min-height: 132px !important; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .88rem !important; }
+    .import-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+    .import-options .field { margin: 0; }
+    .import-options select { width: 100%; min-height: 44px; }
+    .import-preview { display: none; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .import-preview.visible { display: block; }
+    .import-preview-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 11px; }
+    .import-preview-head h3 { margin: 0 0 5px; font-size: 1rem; }
+    .import-preview-head p { margin: 0; color: var(--ink-soft); font-size: .82rem; }
+    .import-table-wrap { max-height: 290px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+    .import-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .import-table th, .import-table td { padding: 10px 11px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .import-table th { position: sticky; top: 0; z-index: 1; background: #f3f6fa; color: var(--ink-soft); font-size: .76rem; }
+    .import-table tr:last-child td { border-bottom: 0; }
+    .import-url { max-width: 300px; color: var(--ink-soft); word-break: break-all; }
+    .import-status { display: inline-flex; padding: 3px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-dark); font-size: .72rem; font-weight: 800; white-space: nowrap; }
+    .import-status.duplicate { background: #fff3d8; color: #8a5c00; }
+    .import-status.invalid { background: #fde8e6; color: var(--danger); }
+
+    #displayDialog { width: min(720px, calc(100% - 28px)); }
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .settings-panel { padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #fbfcfe; }
+    .settings-panel h3 { margin: 0 0 12px; font-size: .98rem; }
+    .settings-panel select { width: 100%; min-height: 44px; }
+    .density-slider { width: 100%; accent-color: var(--accent); }
+    .density-scale { display: flex; justify-content: space-between; margin-top: 7px; color: var(--ink-soft); font-size: .72rem; }
+    .density-output { margin: 8px 0 0; color: var(--accent-dark); font-size: .82rem; font-weight: 800; }
+    .switch-row { display: flex !important; align-items: flex-start; gap: 11px; margin: 0 !important; font-weight: 400 !important; cursor: pointer; }
+    .switch-row input { width: 18px !important; height: 18px; margin-top: 2px; accent-color: var(--accent); }
+    .switch-row strong { display: block; margin-bottom: 3px; }
+    .switch-row span { color: var(--ink-soft); font-size: .8rem; line-height: 1.45; }
+    .sort-section { margin-top: 18px; }
+    .sort-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .sort-heading h3 { margin: 0; font-size: 1rem; }
+    .sort-heading p { margin: 4px 0 0; color: var(--ink-soft); font-size: .8rem; }
+    .sort-rule-list { display: grid; gap: 8px; }
+    .sort-rule-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) minmax(0, .8fr) auto; align-items: center; gap: 8px; padding: 9px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .sort-priority { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--paper); color: var(--ink-soft); font-size: .78rem; font-weight: 800; }
+    .sort-rule-row select { width: 100%; min-width: 0; min-height: 38px; }
+    .sort-actions { display: flex; gap: 3px; }
+    .sort-empty { margin: 0; padding: 18px; border: 1px dashed var(--line-strong); border-radius: 12px; color: var(--ink-soft); text-align: center; }
+
+    .bulk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .bulk-grid .field { margin-bottom: 0; }
+    .bulk-grid .wide { grid-column: 1 / -1; }
+    .bulk-grid select { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 11px; background: #fff; }
+    .bulk-summary { margin: 0 0 18px; padding: 11px 13px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-dark); }
+    }
+
+    .site-title { min-width: 0; }
+    .site-title a {
+      display: block;
+      color: var(--ink);
+      font-weight: 750;
+      font-size: 1.03rem;
+      text-decoration: none;
+    }
+    .name-single .site-title a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .name-two .site-title a { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; }
+    .name-full .site-title a { overflow: visible; white-space: normal; overflow-wrap: anywhere; }
+
+    .site-title a:hover { color: var(--accent-dark); text-decoration: underline; text-underline-offset: 3px; }
+    .site-host { margin-top: 4px; overflow: hidden; color: #718096; font-size: 0.79rem; text-overflow: ellipsis; white-space: nowrap; }
+
+    .card-actions { display: flex; gap: 4px; }
+    .feature-button.featured { border-color: #ecd88d; background: #fff8d9; color: #a36d00; }
+    .feature-button svg { fill: transparent; }
+    .feature-button.featured svg { fill: currentColor; }
+    .icon-button {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: #64748b;
+    }
+
+    .icon-button:hover { border-color: var(--line); background: var(--paper); color: var(--ink); }
+    .icon-button.delete:hover { border-color: #ffd4cf; background: var(--danger-soft); color: var(--danger); }
+    .icon-button svg { width: 17px; height: 17px; }
+
+    .site-details { flex: 1; margin: 20px 0 18px; }
+    .detail-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; margin-bottom: 10px; line-height: 1.45; }
+    .detail-label { color: #7a8798; font-size: 0.8rem; }
+    .detail-value { overflow-wrap: anywhere; color: var(--ink-soft); font-size: 0.87rem; }
+    .detail-value.empty { color: #9aa6b5; }
+    .note-value { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+
+    .open-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid #b9ddd9;
+      border-radius: 11px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .open-button:hover { border-color: var(--accent); background: #cff0ec; }
+    .open-button svg { width: 16px; height: 16px; }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 74px 24px;
+      text-align: center;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      background: rgba(244, 247, 251, 0.72);
+    }
+
+    .empty-state h2 { margin: 0 0 8px; font-size: 1.15rem; }
+    .empty-state p { margin: 0 0 20px; color: var(--ink-soft); }
+
+    dialog {
+      width: min(560px, calc(100% - 28px));
+      max-height: calc(100vh - 32px);
+      padding: 0;
+      overflow: auto;
+      border: 0;
+      border-radius: 20px;
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 30px 90px rgba(16, 35, 63, 0.28);
+    }
+
+    dialog::backdrop { background: rgba(10, 22, 39, 0.58); backdrop-filter: blur(4px); }
+    .dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 24px 16px; }
+    .dialog-header h2 { margin: 0; font-size: 1.28rem; }
+    .dialog-body { padding: 0 24px 22px; }
+    .field { margin-bottom: 17px; }
+    .field label { display: block; margin-bottom: 7px; color: var(--ink); font-size: 0.88rem; font-weight: 700; }
+    .field label span { color: var(--danger); }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 11px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 1rem;
+    }
+
+    .field textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .field input:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(13, 127, 120, 0.1); outline: none; }
+    .field-hint { margin: 7px 0 0; color: #78869a; font-size: 0.78rem; line-height: 1.45; }
+    .field-error { min-height: 20px; margin: 6px 0 -2px; color: var(--danger); font-size: 0.8rem; }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 16px 24px 22px;
+      border-top: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+
+    .secondary-button,
+    .danger-button {
+      min-height: 42px;
+      padding: 9px 15px;
+      border: 1px solid var(--line-strong);
+      border-radius: 11px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .secondary-button:hover { background: var(--paper); }
+    .danger-button { border-color: var(--danger); background: var(--danger); color: #fff; }
+    .danger-button:hover { background: #8f1b13; }
+    .close-button { border: 0; background: transparent; }
+
+    .confirm-copy { margin: 0; color: var(--ink-soft); line-height: 1.65; }
+    .confirm-copy strong { color: var(--ink); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      z-index: 20;
+      max-width: calc(100% - 32px);
+      padding: 11px 16px;
+      border-radius: 11px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 0.9rem;
+      box-shadow: 0 14px 36px rgba(16, 35, 63, 0.25);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 12px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 880px) {
+      .site-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .density-1 .site-grid.view-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .density-2 .site-grid.view-grid, .density-3 .site-grid.view-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .density-4 .site-grid.view-grid, .density-5 .site-grid.view-grid { grid-template-columns: 1fr; }
+      .view-list .site-card { grid-template-columns: minmax(210px, 1fr) minmax(180px, 1fr); }
+      .view-list .open-button { display: none; }
+      .category-layout { grid-template-columns: 170px minmax(0, 1fr); }
+    }
+
+    @media (max-width: 620px) {
+      .app-shell { width: min(100% - 20px, 1180px); padding-top: 20px; }
+      .topbar { display: block; margin-bottom: 18px; }
+      .storage-badge { margin-top: 16px; }
+      .toolbar { grid-template-columns: 1fr; padding: 15px; }
+      .toolbar-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .bulk-button { width: 100%; }
+      .backup-grid { grid-template-columns: 1fr; }
+      .filterbar { align-items: stretch; flex-direction: column; padding: 12px 15px; }
+      .filter-tools { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .filter-tools .view-switch { grid-column: 2; grid-row: 1; justify-self: end; }
+      #manageTaxonomyButton, #displaySettingsButton { width: 100%; }
+      .tag-select { width: 100%; max-width: none; }
+      .search-wrap { max-width: none; }
+      .primary-button { width: 100%; }
+      .summary-row { align-items: flex-start; padding: 16px 16px 2px; }
+      .privacy-note { max-width: 160px; text-align: right; }
+      .site-grid { grid-template-columns: 1fr; padding: 14px 16px 20px; }
+      .density-1 .site-grid.view-grid, .density-2 .site-grid.view-grid, .density-3 .site-grid.view-grid, .density-4 .site-grid.view-grid, .density-5 .site-grid.view-grid { grid-template-columns: 1fr; }
+      .site-card { min-height: 0; }
+      .view-list .site-card { display: flex; margin-bottom: 12px; }
+      .view-list .site-details { margin: 18px 0; }
+      .view-list .open-button { display: flex; width: 100%; }
+      .category-layout { display: block; padding: 14px 16px 20px; }
+      .category-sidebar { display: flex; gap: 7px; overflow-x: auto; padding: 0 0 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .category-sidebar-title { display: none; }
+      .sidebar-category { width: auto; flex: 0 0 auto; }
+      .category-content { padding: 14px 0 0; }
+      .recent-controls.visible { align-items: stretch; flex-direction: column; }
+      .recent-controls p { margin: 0; }
+      .time-presets { overflow-x: auto; }
+      .bulk-bar.visible { align-items: stretch; flex-direction: column; }
+      .bulk-bar strong { margin: 0; }
+      .view-list .site-card.recent-card { display: grid; grid-template-columns: auto minmax(0, 1fr); }
+      .bulk-mode .site-card.recent-card { grid-template-columns: auto auto minmax(0, 1fr); }
+      .view-list .site-card.recent-card .visit-stats { grid-column: 1 / -1; margin: 0; }
+      .view-list .site-card.recent-card .open-button { display: flex; grid-column: 1 / -1; width: 100%; }
+      .bulk-grid { grid-template-columns: 1fr; }
+      .bulk-grid .wide { grid-column: auto; }
+      .import-source-grid, .import-options { grid-template-columns: 1fr; }
+      .settings-grid { grid-template-columns: 1fr; }
+      .sort-rule-row { grid-template-columns: 28px minmax(0, 1fr); }
+      .sort-rule-row > select:last-of-type, .sort-actions { grid-column: 2; }
+      .import-preview-head { display: block; }
+      .import-preview-head button { width: 100%; margin-top: 10px; }
+      .dialog-footer { flex-direction: column-reverse; }
+      .dialog-footer button { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none"><path d="M6 8h20v18H6z" stroke="white" stroke-width="2.6" stroke-linejoin="round"/><path d="M11 4v8M21 4v8M6 14h20" stroke="#47d7c9" stroke-width="2.6" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <h1>常用网站</h1>
+          <p>把常去的地方放在手边</p>
+        </div>
+      </div>
+      <div class="storage-badge" title="网站数据保存在当前浏览器；建议定期下载完整备份">当前保存在本机浏览器</div>
+    </header>
+
+    <section class="workspace" aria-label="网站管理区">
+      <div class="toolbar">
+        <label class="search-wrap">
+          <span class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">搜索网站</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+          <input id="searchInput" class="search-input" type="search" placeholder="搜索名称、网址、分类、标签或备注" autocomplete="off">
+        </label>
+        <div class="toolbar-actions">
+          <button id="backupButton" class="bulk-button" type="button">备份与恢复</button>
+          <button id="importButton" class="bulk-button" type="button">批量导入</button>
+          <button id="bulkModeButton" class="bulk-button" type="button">批量编辑</button>
+          <button id="addButton" class="primary-button" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            添加网站
+          </button>
+        </div>
+      </div>
+
+      <div id="filterbar" class="filterbar">
+        <div id="categoryTabs" class="category-tabs" aria-label="按分类筛选"></div>
+        <div class="filter-tools">
+          <label>
+            <span class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">按标签筛选</span>
+            <select id="tagFilter" class="tag-select"><option value="">全部标签</option></select>
+          </label>
+          <button id="manageTaxonomyButton" class="manage-button" type="button">管理分类与标签</button>
+          <button id="displaySettingsButton" class="manage-button" type="button">显示与排序</button>
+          <div class="view-switch" aria-label="切换展示方式">
+            <button class="view-button" type="button" data-view="grid" title="卡片视图" aria-label="卡片视图">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button class="view-button" type="button" data-view="list" title="列表视图" aria-label="列表视图">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="5" cy="6" r="1" fill="currentColor"/><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="5" cy="18" r="1" fill="currentColor"/></svg>
+            </button>
+            <button class="view-button" type="button" data-view="sidebar" title="分类视图" aria-label="左侧分类视图">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M12 8h6M12 12h6M12 16h4"/></svg>
+            </button>
+            <button class="view-button" type="button" data-view="recent" title="最近访问" aria-label="最近访问与常用统计">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="recentControls" class="recent-controls">
+        <p>仅统计从本工具点击打开的访问</p>
+        <div class="time-presets" aria-label="常用时间范围">
+          <button class="filter-pill" type="button" data-days="1">最近一天</button>
+          <button class="filter-pill" type="button" data-days="7">最近 7 天</button>
+          <button class="filter-pill" type="button" data-days="30">最近 30 天</button>
+          <button class="filter-pill" type="button" data-days="0">全部时间</button>
+        </div>
+        <label>起始时间 <input id="recentStartInput" class="time-input" type="datetime-local"></label>
+      </div>
+
+      <div id="bulkBar" class="bulk-bar">
+        <strong id="bulkSummary">已选择 0 个网站</strong>
+        <button id="selectVisibleButton" class="manage-button" type="button">选择当前结果</button>
+        <button id="clearSelectionButton" class="manage-button" type="button">清空选择</button>
+        <button id="openBulkDialogButton" class="primary-button" type="button" disabled>编辑所选网站</button>
+      </div>
+
+      <div class="summary-row">
+        <div id="resultSummary" aria-live="polite"></div>
+        <div class="privacy-note" title="当前版本不用于保存密码">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          请勿填写密码或验证码
+        </div>
+      </div>
+
+      <div id="siteGrid" class="site-grid"></div>
+    </section>
+  </main>
+
+  <dialog id="siteDialog" aria-labelledby="dialogTitle">
+    <form id="siteForm" method="dialog" novalidate>
+      <div class="dialog-header">
+        <h2 id="dialogTitle">添加网站</h2>
+        <button class="icon-button close-button" type="button" data-close-dialog aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="dialog-body">
+        <input id="siteId" type="hidden">
+        <div class="field">
+          <label for="siteName">网站名称 <span aria-hidden="true">*</span></label>
+          <input id="siteName" name="name" maxlength="80" required placeholder="例如：GitHub">
+        </div>
+        <div class="field">
+          <label for="siteUrl">网址 <span aria-hidden="true">*</span></label>
+          <input id="siteUrl" name="url" type="url" inputmode="url" maxlength="500" required placeholder="https://example.com">
+          <div id="urlError" class="field-error" role="alert"></div>
+        </div>
+        <div class="field">
+          <label>网站图标</label>
+          <div class="icon-picker">
+            <div id="iconPreview" class="icon-preview">自动</div>
+            <div>
+              <div class="icon-picker-actions">
+                <label class="secondary-button file-button">上传自定义图标<input id="siteIconFile" type="file" accept="image/png,image/jpeg,image/webp,image/x-icon,image/vnd.microsoft.icon"></label>
+                <button id="removeCustomIcon" class="secondary-button" type="button">恢复自动图标</button>
+              </div>
+              <p class="field-hint">默认尝试读取网站自己的图标；没有或显示不正确时，可上传图片覆盖。图片只保存在当前浏览器。</p>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="siteCategory">分类</label>
+          <select id="siteCategory" name="category" class="tag-select" style="width:100%;max-width:none;min-height:44px"><option value="">未分类</option></select>
+          <p class="field-hint">分类由你在“管理分类与标签”中创建、改名或删除。</p>
+        </div>
+        <div class="field">
+          <label for="siteTags">标签</label>
+          <input id="siteTags" name="tags" maxlength="300" placeholder="例如：AI, 写作, 临时">
+          <p class="field-hint">可填写多个标签，用中文或英文逗号分隔；标签也完全由你决定。</p>
+        </div>
+        <div class="field">
+          <label for="siteNote">备注</label>
+          <textarea id="siteNote" name="note" maxlength="1000" placeholder="例如：用于课程资料或项目管理"></textarea>
+        </div>
+        <div class="field">
+          <label class="switch-row" for="siteFeatured"><input id="siteFeatured" type="checkbox"><span><strong>星标（特别关注）</strong>开启全局“星标优先”时，这个网站会排在其他结果前面。</span></label>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="secondary-button" type="button" data-close-dialog>取消</button>
+        <button class="primary-button" type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="displayDialog" aria-labelledby="displayTitle">
+    <form id="displayForm" method="dialog">
+      <div class="dialog-header">
+        <div><h2 id="displayTitle">显示与排序</h2><p class="field-hint">全局星标优先开关位于下方；启用时优先于全部排序规则。</p></div>
+        <button class="icon-button close-button" type="button" data-close-display aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="dialog-body">
+        <div class="settings-grid">
+          <div class="settings-panel field">
+            <h3>网站名称</h3>
+            <label for="nameDisplayMode">过长时的显示方式</label>
+            <select id="nameDisplayMode"><option value="single">单行省略号</option><option value="two">最多两行</option><option value="full">完整换行</option></select>
+          </div>
+          <div class="settings-panel field">
+            <h3>显示密度</h3>
+            <label for="displayDensity">每屏显示数量</label>
+            <input id="displayDensity" class="density-slider" type="range" min="1" max="5" step="1" value="3">
+            <div class="density-scale"><span>更多</span><span>标准</span><span>更少</span></div>
+            <p id="densityOutput" class="density-output">第 3 档 · 标准</p>
+          </div>
+        </div>
+        <div class="settings-panel" style="margin-top:15px">
+          <label class="switch-row" for="featuredPriority"><input id="featuredPriority" type="checkbox"><span><strong>全局开启星标优先</strong>开启后，星标网站在任何搜索和筛选结果中优先；关闭后保留各网站的星标，但星标不改变排序。</span></label>
+        </div>
+        <section class="sort-section">
+          <div class="sort-heading"><div><h3>排序优先级</h3><p>从上到下依次比较；可以不添加任何规则。</p></div><button id="addSortRuleButton" class="secondary-button" type="button">添加规则</button></div>
+          <div id="sortRuleList" class="sort-rule-list"></div>
+        </section>
+      </div>
+      <div class="dialog-footer">
+        <button id="resetDisplayButton" class="secondary-button" type="button">恢复默认</button>
+        <button class="secondary-button" type="button" data-close-display>取消</button>
+        <button class="primary-button" type="submit">保存设置</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="importDialog" aria-labelledby="importTitle">
+    <form id="importForm" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <h2 id="importTitle">批量导入网站</h2>
+          <p class="field-hint">先解析预览，再确认写入；不会导入密码或浏览器登录数据。</p>
+        </div>
+        <button class="icon-button close-button" type="button" data-close-import aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="dialog-body">
+        <div class="import-source-grid">
+          <section class="import-source-card">
+            <h3>选择文件</h3>
+            <p>支持 Edge/Chrome 收藏夹 JSON、浏览器导出的 HTML、通用 JSON、CSV、TSV 和 TXT，最大 5 MB。</p>
+            <label class="secondary-button file-button">选择导入文件<input id="importFile" type="file"></label>
+            <p id="importFileName" class="import-file-name">尚未选择文件</p>
+          </section>
+          <section class="import-source-card">
+            <h3>或直接粘贴</h3>
+            <p>可粘贴 JSON、CSV/TSV，或每行一个网址；也支持“名称 + 制表符 + 网址”。</p>
+            <textarea id="importText" class="import-textarea" placeholder="示例网站&#9;https://example.com/&#10;文献检索&#9;https://scholar.google.com/"></textarea>
+          </section>
+        </div>
+        <div class="import-options">
+          <div class="field">
+            <label for="importCategory">统一分类</label>
+            <select id="importCategory"><option value="">使用文件分类；没有则未分类</option></select>
+          </div>
+          <div class="field">
+            <label for="importTags">统一追加标签</label>
+            <input id="importTags" maxlength="300" placeholder="例如：科研, 收藏夹">
+          </div>
+          <div class="field">
+            <label for="duplicateMode">重复网址</label>
+            <select id="duplicateMode"><option value="skip">跳过已有网站</option><option value="update">更新已有网站</option></select>
+          </div>
+        </div>
+        <div id="importError" class="field-error" role="alert"></div>
+        <div id="importPreview" class="import-preview">
+          <div class="import-preview-head">
+            <div><h3>导入预览</h3><p id="importPreviewSummary"></p></div>
+            <button id="parseImportButton" class="secondary-button" type="button">重新解析</button>
+          </div>
+          <div class="import-table-wrap">
+            <table class="import-table">
+              <thead><tr><th>状态</th><th>名称</th><th>网址</th><th>分类与标签</th></tr></thead>
+              <tbody id="importPreviewBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="secondary-button" type="button" data-close-import>取消</button>
+        <button id="previewImportButton" class="secondary-button" type="button">解析并预览</button>
+        <button id="confirmImportButton" class="primary-button" type="submit" disabled>确认导入</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="backupDialog" aria-labelledby="backupTitle">
+    <form id="backupForm" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <h2 id="backupTitle">完整备份与恢复</h2>
+          <p class="field-hint">备份文件只下载到你的设备，不会上传到服务器。</p>
+        </div>
+        <button class="icon-button close-button" type="button" data-close-backup aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="dialog-body">
+        <div class="backup-grid">
+          <section class="backup-card">
+            <h3>导出完整备份</h3>
+            <p>包含网站、分类、标签、备注、星标、自定义图标、访问记录，以及视图、密度和排序设置。</p>
+            <div id="backupSummary" class="backup-summary"></div>
+            <button id="exportBackupButton" class="primary-button" type="button">下载完整 JSON 备份</button>
+          </section>
+          <section class="backup-card">
+            <h3>从备份恢复</h3>
+            <p>选择由本工具导出的 JSON 文件。系统会先检查格式并显示预览。</p>
+            <label class="secondary-button file-button">选择备份文件<input id="restoreFile" type="file" accept="application/json,.json"></label>
+            <p id="restoreFileName" class="import-file-name">尚未选择文件</p>
+            <div id="restoreError" class="field-error" role="alert"></div>
+            <div id="restorePreview" class="restore-preview"></div>
+          </section>
+        </div>
+        <div class="restore-warning" style="margin-top:14px"><strong>完整恢复会替换当前浏览器里的全部网站、分类、标签、访问记录和显示设置。</strong>默认会先自动下载一份当前数据的安全备份。</div>
+        <label id="restoreConfirmRow" class="switch-row restore-confirm" for="restoreConfirm" style="margin-top:12px"><input id="restoreConfirm" type="checkbox"><span><strong>确认完整替换</strong>我已检查上方预览，并了解当前数据将被备份文件替换。</span></label>
+      </div>
+      <div class="dialog-footer">
+        <button class="secondary-button" type="button" data-close-backup>取消</button>
+        <button id="confirmRestoreButton" class="danger-button" type="submit" disabled>先备份当前数据，再完整恢复</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="bulkDialog" aria-labelledby="bulkTitle">
+    <form id="bulkForm" method="dialog">
+      <div class="dialog-header">
+        <h2 id="bulkTitle">批量编辑网站</h2>
+        <button class="icon-button close-button" type="button" data-close-bulk aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="dialog-body">
+        <p id="bulkDialogSummary" class="bulk-summary"></p>
+        <div class="bulk-grid">
+          <div class="field">
+            <label for="bulkCategoryMode">分类处理</label>
+            <select id="bulkCategoryMode"><option value="keep">不修改</option><option value="set">设置为指定分类</option><option value="clear">移到未分类</option></select>
+          </div>
+          <div class="field">
+            <label for="bulkCategory">指定分类</label>
+            <select id="bulkCategory"><option value="">未分类</option></select>
+          </div>
+          <div class="field">
+            <label for="bulkTagMode">标签处理</label>
+            <select id="bulkTagMode"><option value="keep">不修改</option><option value="add">添加标签</option><option value="remove">移除标签</option><option value="replace">替换全部标签</option></select>
+          </div>
+          <div class="field">
+            <label for="bulkTags">标签</label>
+            <input id="bulkTags" maxlength="300" placeholder="多个标签用逗号分隔">
+          </div>
+          <div class="field wide">
+            <label for="bulkNoteMode">备注处理</label>
+            <select id="bulkNoteMode"><option value="keep">不修改</option><option value="append">追加到原备注</option><option value="replace">替换备注</option><option value="clear">清空备注</option></select>
+          </div>
+          <div class="field wide">
+            <label for="bulkNote">备注内容</label>
+            <textarea id="bulkNote" maxlength="500" placeholder="需要追加或替换的内容"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="secondary-button" type="button" data-close-bulk>取消</button>
+        <button class="primary-button" type="submit">应用批量修改</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="taxonomyDialog" aria-labelledby="taxonomyTitle">
+    <div class="dialog-header">
+      <h2 id="taxonomyTitle">管理分类与标签</h2>
+      <button class="icon-button close-button" type="button" data-close-taxonomy aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <section class="taxonomy-section">
+        <div class="taxonomy-heading"><h3>分类</h3><p>网站只能属于一个分类</p></div>
+        <form id="categoryAddForm" class="inline-add">
+          <input id="newCategoryName" maxlength="40" required placeholder="新分类名称">
+          <button class="primary-button" type="submit" style="min-height:39px">添加</button>
+        </form>
+        <div id="categoryManagerList" class="taxonomy-list"></div>
+      </section>
+      <section class="taxonomy-section">
+        <div class="taxonomy-heading"><h3>标签</h3><p>标签可以先创建，再用于网站</p></div>
+        <form id="tagAddForm" class="inline-add">
+          <input id="newTagName" maxlength="30" required placeholder="新标签名称">
+          <button class="primary-button" type="submit" style="min-height:39px">添加</button>
+        </form>
+        <div id="tagManagerList" class="taxonomy-list"></div>
+      </section>
+    </div>
+    <div class="dialog-footer">
+      <button class="primary-button" type="button" data-close-taxonomy>完成</button>
+    </div>
+  </dialog>
+
+  <dialog id="deleteDialog" aria-labelledby="deleteTitle">
+    <div class="dialog-header">
+      <h2 id="deleteTitle">确认删除？</h2>
+      <button class="icon-button close-button" type="button" data-close-delete aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <p id="deleteCopy" class="confirm-copy"></p>
+    </div>
+    <div class="dialog-footer">
+      <button class="secondary-button" type="button" data-close-delete>取消</button>
+      <button id="confirmDelete" class="danger-button" type="button">确认删除</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const SITE_KEY = "website-hub.sites.v1";
+      const CATEGORY_KEY = "website-hub.categories.v1";
+      const TAG_KEY = "website-hub.tags.v1";
+      const VIEW_KEY = "website-hub.view.v1";
+      const RECENT_KEY = "website-hub.recent-start.v1";
+      const DISPLAY_KEY = "website-hub.display-settings.v1";
+      const seedCategories = [];
+      const seedSites = [];
+      const sortCriteria = [
+        { key: "name", label: "名称（拼音 / 字母）" },
+        { key: "lastVisit", label: "最近打开时间" },
+        { key: "visitCount", label: "累计打开次数" },
+        { key: "createdAt", label: "加入时间" },
+        { key: "domain", label: "网站域名" }
+      ];
+      const defaultDisplaySettings = { nameMode: "two", density: 3, featuredFirst: true, sortRules: [] };
+      const densityLabels = ["", "第 1 档 · 最紧凑", "第 2 档 · 紧凑", "第 3 档 · 标准", "第 4 档 · 宽松", "第 5 档 · 最宽松"];
+      const nameCollator = new Intl.Collator("zh-CN-u-co-pinyin", { numeric: true, sensitivity: "base" });
+
+      const $ = selector => document.querySelector(selector);
+      const searchInput = $("#searchInput");
+      const addButton = $("#addButton");
+      const importButton = $("#importButton");
+      const backupButton = $("#backupButton");
+      const bulkModeButton = $("#bulkModeButton");
+      const filterbar = $("#filterbar");
+      const categoryTabs = $("#categoryTabs");
+      const tagFilter = $("#tagFilter");
+      const recentControls = $("#recentControls");
+      const recentStartInput = $("#recentStartInput");
+      const bulkBar = $("#bulkBar");
+      const bulkSummary = $("#bulkSummary");
+      const selectVisibleButton = $("#selectVisibleButton");
+      const clearSelectionButton = $("#clearSelectionButton");
+      const openBulkDialogButton = $("#openBulkDialogButton");
+      const siteGrid = $("#siteGrid");
+      const resultSummary = $("#resultSummary");
+      const siteDialog = $("#siteDialog");
+      const siteForm = $("#siteForm");
+      const dialogTitle = $("#dialogTitle");
+      const siteId = $("#siteId");
+      const siteName = $("#siteName");
+      const siteUrl = $("#siteUrl");
+      const siteCategory = $("#siteCategory");
+      const siteTags = $("#siteTags");
+      const siteNote = $("#siteNote");
+      const siteFeatured = $("#siteFeatured");
+      const siteIconFile = $("#siteIconFile");
+      const iconPreview = $("#iconPreview");
+      const removeCustomIcon = $("#removeCustomIcon");
+      const urlError = $("#urlError");
+      const displaySettingsButton = $("#displaySettingsButton");
+      const displayDialog = $("#displayDialog");
+      const displayForm = $("#displayForm");
+      const nameDisplayMode = $("#nameDisplayMode");
+      const displayDensity = $("#displayDensity");
+      const densityOutput = $("#densityOutput");
+      const featuredPriority = $("#featuredPriority");
+      const addSortRuleButton = $("#addSortRuleButton");
+      const sortRuleList = $("#sortRuleList");
+      const resetDisplayButton = $("#resetDisplayButton");
+      const importDialog = $("#importDialog");
+      const importForm = $("#importForm");
+      const importFile = $("#importFile");
+      const importFileName = $("#importFileName");
+      const importText = $("#importText");
+      const importCategory = $("#importCategory");
+      const importTags = $("#importTags");
+      const duplicateMode = $("#duplicateMode");
+      const importError = $("#importError");
+      const importPreview = $("#importPreview");
+      const importPreviewSummary = $("#importPreviewSummary");
+      const importPreviewBody = $("#importPreviewBody");
+      const previewImportButton = $("#previewImportButton");
+      const parseImportButton = $("#parseImportButton");
+      const confirmImportButton = $("#confirmImportButton");
+      const backupDialog = $("#backupDialog");
+      const backupForm = $("#backupForm");
+      const backupSummary = $("#backupSummary");
+      const exportBackupButton = $("#exportBackupButton");
+      const restoreFile = $("#restoreFile");
+      const restoreFileName = $("#restoreFileName");
+      const restoreError = $("#restoreError");
+      const restorePreview = $("#restorePreview");
+      const restoreConfirmRow = $("#restoreConfirmRow");
+      const restoreConfirm = $("#restoreConfirm");
+      const confirmRestoreButton = $("#confirmRestoreButton");
+      const bulkDialog = $("#bulkDialog");
+      const bulkForm = $("#bulkForm");
+      const bulkDialogSummary = $("#bulkDialogSummary");
+      const bulkCategoryMode = $("#bulkCategoryMode");
+      const bulkCategory = $("#bulkCategory");
+      const bulkTagMode = $("#bulkTagMode");
+      const bulkTags = $("#bulkTags");
+      const bulkNoteMode = $("#bulkNoteMode");
+      const bulkNote = $("#bulkNote");
+      const taxonomyDialog = $("#taxonomyDialog");
+      const categoryAddForm = $("#categoryAddForm");
+      const newCategoryName = $("#newCategoryName");
+      const tagAddForm = $("#tagAddForm");
+      const newTagName = $("#newTagName");
+      const categoryManagerList = $("#categoryManagerList");
+      const tagManagerList = $("#tagManagerList");
+      const deleteDialog = $("#deleteDialog");
+      const deleteCopy = $("#deleteCopy");
+      const confirmDelete = $("#confirmDelete");
+      const toast = $("#toast");
+
+      let categories = loadArray(CATEGORY_KEY, seedCategories).map(cleanCategory);
+      let sites = loadArray(SITE_KEY, seedSites).filter(isSiteShape).map(cleanSite);
+      let tagCatalog = loadTagCatalog();
+      let displaySettings = loadDisplaySettings();
+      let draftSortRules = [];
+      let viewMode = ["grid", "list", "sidebar", "recent"].includes(localStorage.getItem(VIEW_KEY)) ? localStorage.getItem(VIEW_KEY) : "grid";
+      let activeCategory = "all";
+      let activeTag = "";
+      const savedRecentStart = localStorage.getItem(RECENT_KEY);
+      let recentStart = savedRecentStart === null ? Date.now() - 7 * 86400000 : Number(savedRecentStart);
+      if (!Number.isFinite(recentStart) || recentStart < 0) recentStart = Date.now() - 7 * 86400000;
+      let bulkMode = false;
+      let selectedIds = new Set();
+      let currentVisibleIds = [];
+      let pendingIconData = "";
+      let pendingImportFileText = "";
+      let pendingImportRows = [];
+      let pendingRestore = null;
+      let pendingDelete = null;
+      let toastTimer = null;
+
+      function loadArray(key, fallback) {
+        try {
+          const saved = localStorage.getItem(key);
+          if (saved === null) return fallback.map(item => ({ ...item }));
+          const parsed = JSON.parse(saved);
+          if (!Array.isArray(parsed)) throw new Error("Invalid saved data");
+          return parsed;
+        } catch (error) {
+          console.warn("无法读取本机保存的数据，将使用示例数据。", error);
+          return fallback.map(item => ({ ...item }));
+        }
+      }
+
+      function normalizeSortRules(value) {
+        const allowed = new Set(sortCriteria.map(item => item.key));
+        const seen = new Set();
+        return (Array.isArray(value) ? value : []).map(rule => ({
+          key: String(rule?.key || ""),
+          dir: rule?.dir === "asc" ? "asc" : "desc"
+        })).filter(rule => {
+          if (!allowed.has(rule.key) || seen.has(rule.key)) return false;
+          seen.add(rule.key);
+          return true;
+        }).slice(0, sortCriteria.length);
+      }
+
+      function loadDisplaySettings() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(DISPLAY_KEY) || "null");
+          const density = Math.min(5, Math.max(1, Math.round(Number(saved?.density) || defaultDisplaySettings.density)));
+          return {
+            nameMode: ["single", "two", "full"].includes(saved?.nameMode) ? saved.nameMode : defaultDisplaySettings.nameMode,
+            density,
+            featuredFirst: saved?.featuredFirst !== false,
+            sortRules: normalizeSortRules(saved?.sortRules)
+          };
+        } catch (error) {
+          console.warn("无法读取显示与排序设置，已恢复默认值。", error);
+          return { ...defaultDisplaySettings, sortRules: [] };
+        }
+      }
+
+      function persistDisplaySettings() {
+        localStorage.setItem(DISPLAY_KEY, JSON.stringify(displaySettings));
+      }
+
+      function applyDisplaySettings() {
+        document.body.classList.remove("name-single", "name-two", "name-full", "density-1", "density-2", "density-3", "density-4", "density-5");
+        document.body.classList.add(`name-${displaySettings.nameMode}`, `density-${displaySettings.density}`);
+        const ruleCount = displaySettings.sortRules.length;
+        displaySettingsButton.textContent = ruleCount ? `显示与排序 · ${ruleCount} 条` : "显示与排序";
+      }
+
+      function isSiteShape(value) {
+        return value && typeof value === "object" && typeof value.id === "string" && typeof value.name === "string" && typeof value.url === "string";
+      }
+
+      function cleanCategory(category) {
+        return { id: String(category.id || newId()).slice(0, 100), name: String(category.name || "未命名分类").trim().slice(0, 40) };
+      }
+
+      function parseTags(value, limit = 20) {
+        const source = Array.isArray(value) ? value : String(value || "").split(/[，,;；]/);
+        const seen = new Set();
+        return source.map(tag => String(tag).trim().slice(0, 30)).filter(tag => {
+          const key = tag.toLocaleLowerCase("zh-CN");
+          if (!tag || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, limit);
+      }
+
+      function loadTagCatalog() {
+        let savedTags = [];
+        try {
+          const saved = localStorage.getItem(TAG_KEY);
+          if (saved !== null) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) savedTags = parsed;
+          }
+        } catch (error) { console.warn("无法读取标签库，已从网站条目恢复。", error); }
+        return parseTags([...savedTags, ...sites.flatMap(site => site.tags)], 1000);
+      }
+
+      function cleanSite(site) {
+        const oldUsername = String(site.username || "").trim().slice(0, 160);
+        let note = String(site.note || "").trim();
+        if (oldUsername && !note.includes(oldUsername)) note = `${note}${note ? "\n" : ""}登录信息：${oldUsername}`;
+        const iconData = typeof site.iconData === "string" && site.iconData.startsWith("data:image/") && site.iconData.length <= 400000 ? site.iconData : "";
+        const visits = Array.isArray(site.visits) ? site.visits.map(Number).filter(Number.isFinite).filter(value => value > 0).slice(-2000) : [];
+        return {
+          id: String(site.id).slice(0, 100),
+          name: String(site.name).slice(0, 80),
+          url: String(site.url).slice(0, 500),
+          categoryId: String(site.categoryId || "").slice(0, 100),
+          tags: parseTags(site.tags),
+          note: note.slice(0, 1000),
+          iconData,
+          featured: Boolean(site.featured),
+          visits,
+          createdAt: Number(site.createdAt) || Date.now()
+        };
+      }
+
+      function persistSites() { localStorage.setItem(SITE_KEY, JSON.stringify(sites)); }
+      function persistCategories() { localStorage.setItem(CATEGORY_KEY, JSON.stringify(categories)); }
+      function persistTagCatalog() { localStorage.setItem(TAG_KEY, JSON.stringify(tagCatalog)); }
+
+      function registerTags(values) {
+        const next = parseTags([...tagCatalog, ...parseTags(values, 1000)], 1000);
+        if (next.length !== tagCatalog.length || next.some((tag, index) => tag !== tagCatalog[index])) {
+          tagCatalog = next;
+          persistTagCatalog();
+        }
+      }
+
+      function normalizeUrl(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        const candidate = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(raw) ? raw : `https://${raw}`;
+        try {
+          const parsed = new URL(candidate);
+          return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : "";
+        } catch { return ""; }
+      }
+
+      function newId() {
+        if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") return globalThis.crypto.randomUUID();
+        return `item-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", "\"": "&quot;" })[char]);
+      }
+
+      function canonicalUrl(value) {
+        const normalized = normalizeUrl(value);
+        if (!normalized) return "";
+        try { return new URL(normalized).href; } catch { return ""; }
+      }
+
+      function importedRow(value = {}, source = "") {
+        const rawUrl = value.url ?? value.href ?? value.link ?? value["网址"] ?? value["链接"] ?? "";
+        const url = normalizeUrl(rawUrl);
+        let name = String(value.name ?? value.title ?? value["名称"] ?? value["网站名称"] ?? "").trim();
+        if (!name && url) name = displayHost(url);
+        const importedUsername = String(value.username ?? value["用户名"] ?? "").trim();
+        let note = String(value.note ?? value.notes ?? value.remark ?? value["备注"] ?? "").trim();
+        if (importedUsername && !note.includes(importedUsername)) note = `${note}${note ? "\n" : ""}登录信息：${importedUsername}`;
+        return {
+          name: name.slice(0, 80),
+          url,
+          categoryName: String(value.categoryName ?? value.category ?? value["分类"] ?? "").trim().slice(0, 40),
+          tags: parseTags(value.tags ?? value.tag ?? value["标签"] ?? []),
+          note: note.slice(0, 1000),
+          source: String(source || value.source || "").slice(0, 120),
+          valid: Boolean(url && name),
+          error: url ? (name ? "" : "缺少名称") : "网址无效"
+        };
+      }
+
+      function parseChromiumBookmarks(value) {
+        if (!value?.roots || typeof value.roots !== "object") return [];
+        const rows = [];
+        const walk = (node, path = []) => {
+          if (!node || typeof node !== "object") return;
+          if (node.type === "url") rows.push(importedRow({ name: node.name, url: node.url }, path.join(" / ")));
+          const nextPath = node.type === "folder" && node.name ? [...path, node.name] : path;
+          if (Array.isArray(node.children)) node.children.forEach(child => walk(child, nextPath));
+        };
+        Object.values(value.roots).forEach(root => walk(root));
+        return rows;
+      }
+
+      function parseJsonImport(text) {
+        const value = JSON.parse(text);
+        const chromiumRows = parseChromiumBookmarks(value);
+        if (chromiumRows.length) return chromiumRows;
+        const records = Array.isArray(value) ? value : Array.isArray(value?.sites) ? value.sites : [value];
+        const categoryLookup = new Map(Array.isArray(value?.categories) ? value.categories.map(category => [String(category.id || ""), String(category.name || "")]) : []);
+        return records.map(record => importedRow({ ...record, categoryName: record.categoryName ?? record.category ?? categoryLookup.get(String(record.categoryId || "")) ?? "" }));
+      }
+
+      function parseHtmlImport(text) {
+        const documentValue = new DOMParser().parseFromString(text, "text/html");
+        return [...documentValue.querySelectorAll("a[href]")].map(link => importedRow({ name: link.textContent.trim() || link.getAttribute("href"), url: link.getAttribute("href") }));
+      }
+
+      function parseDelimitedRows(text, delimiter) {
+        const rows = [];
+        let row = [];
+        let cell = "";
+        let quoted = false;
+        for (let index = 0; index < text.length; index += 1) {
+          const char = text[index];
+          if (char === "\"") {
+            if (quoted && text[index + 1] === "\"") { cell += "\""; index += 1; }
+            else quoted = !quoted;
+          } else if (char === delimiter && !quoted) {
+            row.push(cell); cell = "";
+          } else if ((char === "\n" || char === "\r") && !quoted) {
+            if (char === "\r" && text[index + 1] === "\n") index += 1;
+            row.push(cell); cell = "";
+            if (row.some(value => value.trim())) rows.push(row);
+            row = [];
+          } else cell += char;
+        }
+        row.push(cell);
+        if (row.some(value => value.trim())) rows.push(row);
+        return rows;
+      }
+
+      function parseTableImport(text, delimiter) {
+        const table = parseDelimitedRows(text, delimiter);
+        if (!table.length) return [];
+        const normalizedHeader = table[0].map(value => value.trim().toLocaleLowerCase("zh-CN"));
+        const headerNames = {
+          name: ["name", "title", "名称", "网站名称"],
+          url: ["url", "href", "link", "网址", "链接"],
+          category: ["category", "categoryname", "分类"],
+          tags: ["tags", "tag", "标签"],
+          note: ["note", "notes", "remark", "备注"]
+        };
+        const column = names => normalizedHeader.findIndex(value => names.includes(value));
+        const columns = Object.fromEntries(Object.entries(headerNames).map(([key, names]) => [key, column(names)]));
+        const hasHeader = columns.url >= 0;
+        const data = hasHeader ? table.slice(1) : table;
+        return data.map(cells => {
+          if (hasHeader) return importedRow({
+            name: cells[columns.name], url: cells[columns.url], category: cells[columns.category], tags: cells[columns.tags], note: cells[columns.note]
+          });
+          const first = String(cells[0] || "").trim();
+          const second = String(cells[1] || "").trim();
+          return /^https?:\/\//i.test(first) ? importedRow({ url: first, name: second }) : importedRow({ name: first, url: second });
+        });
+      }
+
+      function parseLineImport(text) {
+        return text.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+          const tabParts = line.split("\t");
+          const pipeParts = tabParts.length > 1 ? tabParts : line.split(/\s+\|\s+/);
+          if (pipeParts.length > 1) {
+            const first = pipeParts[0].trim();
+            const second = pipeParts.slice(1).join(" ").trim();
+            return /^https?:\/\//i.test(first) ? importedRow({ url: first, name: second }) : importedRow({ name: first, url: second });
+          }
+          return importedRow({ url: line });
+        });
+      }
+
+      function parseImportContent(text, fileName = "") {
+        const trimmed = String(text || "").replace(/^\uFEFF/, "").trim();
+        if (!trimmed) throw new Error("请选择文件或粘贴要导入的内容");
+        let rows;
+        const extension = fileName.toLocaleLowerCase().split(".").pop();
+        if (extension === "json" || /^[\[{]/.test(trimmed)) {
+          try { rows = parseJsonImport(trimmed); }
+          catch (error) { if (extension === "json") throw new Error("JSON 文件格式无法解析"); }
+        }
+        if (!rows && (extension === "html" || extension === "htm" || /<a\s[^>]*href=/i.test(trimmed))) rows = parseHtmlImport(trimmed);
+        if (!rows && extension === "tsv") rows = parseTableImport(trimmed, "\t");
+        if (!rows && extension === "csv") rows = parseTableImport(trimmed, ",");
+        if (!rows) {
+          const firstLine = trimmed.split(/\r?\n/, 1)[0];
+          const looksTabular = /(^|[,\t])(url|网址|链接)([,\t]|$)/i.test(firstLine);
+          rows = looksTabular ? parseTableImport(trimmed, firstLine.includes("\t") ? "\t" : ",") : parseLineImport(trimmed);
+        }
+        if (!rows.length) throw new Error("没有识别到可导入的网站");
+        if (rows.length > 5000) throw new Error("一次最多导入 5000 个网站，请拆分文件");
+        return rows;
+      }
+
+      function importRowState(row, seen) {
+        if (!row.valid) return { status: "invalid", label: row.error || "无效", actionable: false };
+        const key = canonicalUrl(row.url);
+        if (seen.has(key)) return { status: "duplicate", label: "文件内重复", actionable: false };
+        seen.add(key);
+        const exists = sites.some(site => canonicalUrl(site.url) === key);
+        if (exists && duplicateMode.value === "skip") return { status: "duplicate", label: "将跳过", actionable: false };
+        if (exists) return { status: "duplicate", label: "将更新", actionable: true };
+        return { status: "new", label: "将新增", actionable: true };
+      }
+
+      function renderImportPreview() {
+        if (!pendingImportRows.length) return;
+        const seen = new Set();
+        const states = pendingImportRows.map(row => importRowState(row, seen));
+        const counts = states.reduce((result, state) => { result[state.status] = (result[state.status] || 0) + 1; if (state.actionable) result.actionable += 1; return result; }, { actionable: 0 });
+        const defaultTags = parseTags(importTags.value);
+        const overrideCategory = categories.find(category => category.id === importCategory.value)?.name || "";
+        importPreviewSummary.textContent = `共识别 ${pendingImportRows.length} 条；可导入 ${counts.actionable} 条，重复 ${counts.duplicate || 0} 条，无效 ${counts.invalid || 0} 条。`;
+        importPreviewBody.innerHTML = pendingImportRows.slice(0, 300).map((row, index) => {
+          const state = states[index];
+          const tagText = parseTags([...row.tags, ...defaultTags]).join("、");
+          const meta = [overrideCategory || row.categoryName || "未分类", tagText].filter(Boolean).join(" · ");
+          return `<tr><td><span class="import-status ${state.status}">${escapeHtml(state.label)}</span></td><td>${escapeHtml(row.name || "—")}</td><td class="import-url">${escapeHtml(row.url || row.error || "—")}</td><td>${escapeHtml(meta)}</td></tr>`;
+        }).join("");
+        if (pendingImportRows.length > 300) importPreviewBody.insertAdjacentHTML("beforeend", `<tr><td colspan="4">预览仅显示前 300 条；确认后仍会处理全部 ${pendingImportRows.length} 条。</td></tr>`);
+        importPreview.classList.add("visible");
+        confirmImportButton.disabled = counts.actionable === 0;
+        importError.textContent = "";
+      }
+
+      function displayHost(value) {
+        const normalized = normalizeUrl(value);
+        if (!normalized) return value;
+        try { return new URL(normalized).hostname.replace(/^www\./, ""); } catch { return value; }
+      }
+
+      function faviconUrl(value) {
+        const normalized = normalizeUrl(value);
+        if (!normalized) return "";
+        try { return `${new URL(normalized).origin}/favicon.ico`; } catch { return ""; }
+      }
+
+      function categoryName(id) {
+        return categories.find(category => category.id === id)?.name || "未分类";
+      }
+
+      function allTags() {
+        return [...tagCatalog].sort((a, b) => a.localeCompare(b, "zh-CN"));
+      }
+
+      function lastVisit(site) {
+        return site.visits.length ? Math.max(...site.visits) : 0;
+      }
+
+      function compareSites(a, b) {
+        if (displaySettings.featuredFirst && a.featured !== b.featured) return a.featured ? -1 : 1;
+        for (const rule of displaySettings.sortRules) {
+          let comparison = 0;
+          if (rule.key === "name") comparison = nameCollator.compare(a.name, b.name);
+          if (rule.key === "lastVisit") comparison = lastVisit(a) - lastVisit(b);
+          if (rule.key === "visitCount") comparison = a.visits.length - b.visits.length;
+          if (rule.key === "createdAt") comparison = a.createdAt - b.createdAt;
+          if (rule.key === "domain") comparison = nameCollator.compare(displayHost(a.url), displayHost(b.url));
+          if (comparison) return rule.dir === "asc" ? comparison : -comparison;
+        }
+        return 0;
+      }
+
+      function sortSites(values) {
+        return values.map((site, index) => ({ site, index })).sort((a, b) => compareSites(a.site, b.site) || a.index - b.index).map(item => item.site);
+      }
+
+      function directionChoices(key) {
+        const labels = {
+          name: [["asc", "拼音 / 字母正序"], ["desc", "拼音 / 字母倒序"]],
+          lastVisit: [["desc", "最近打开优先"], ["asc", "较早打开优先"]],
+          visitCount: [["desc", "次数多优先"], ["asc", "次数少优先"]],
+          createdAt: [["desc", "最近加入优先"], ["asc", "较早加入优先"]],
+          domain: [["asc", "域名正序"], ["desc", "域名倒序"]]
+        };
+        return labels[key] || labels.name;
+      }
+
+      function defaultDirection(key) {
+        return key === "name" || key === "domain" ? "asc" : "desc";
+      }
+
+      function updateDensityOutput() {
+        densityOutput.textContent = densityLabels[Number(displayDensity.value)] || densityLabels[3];
+      }
+
+      function renderSortRules() {
+        if (!draftSortRules.length) {
+          sortRuleList.innerHTML = `<p class="sort-empty">尚未添加排序条件；网站会保留当前顺序。</p>`;
+        } else {
+          sortRuleList.innerHTML = draftSortRules.map((rule, index) => {
+            const used = new Set(draftSortRules.map(item => item.key));
+            const criteria = sortCriteria.map(item => `<option value="${item.key}" ${item.key === rule.key ? "selected" : ""} ${used.has(item.key) && item.key !== rule.key ? "disabled" : ""}>${escapeHtml(item.label)}</option>`).join("");
+            const directions = directionChoices(rule.key).map(([value, label]) => `<option value="${value}" ${value === rule.dir ? "selected" : ""}>${escapeHtml(label)}</option>`).join("");
+            return `<div class="sort-rule-row" data-sort-index="${index}">
+              <span class="sort-priority">${index + 1}</span>
+              <select data-sort-key aria-label="第 ${index + 1} 优先级排序条件">${criteria}</select>
+              <select data-sort-direction aria-label="第 ${index + 1} 优先级排序方向">${directions}</select>
+              <div class="sort-actions">
+                <button class="icon-button" type="button" data-sort-up title="提高优先级" aria-label="提高优先级" ${index === 0 ? "disabled" : ""}>↑</button>
+                <button class="icon-button" type="button" data-sort-down title="降低优先级" aria-label="降低优先级" ${index === draftSortRules.length - 1 ? "disabled" : ""}>↓</button>
+                <button class="icon-button delete" type="button" data-sort-remove title="移除条件" aria-label="移除条件">×</button>
+              </div>
+            </div>`;
+          }).join("");
+        }
+        addSortRuleButton.disabled = draftSortRules.length >= sortCriteria.length;
+        sortRuleList.querySelectorAll("[data-sort-index]").forEach(row => {
+          const index = Number(row.dataset.sortIndex);
+          row.querySelector("[data-sort-key]").addEventListener("change", event => {
+            draftSortRules[index] = { key: event.target.value, dir: defaultDirection(event.target.value) };
+            renderSortRules();
+          });
+          row.querySelector("[data-sort-direction]").addEventListener("change", event => { draftSortRules[index].dir = event.target.value; });
+          row.querySelector("[data-sort-up]").addEventListener("click", () => {
+            if (index <= 0) return;
+            [draftSortRules[index - 1], draftSortRules[index]] = [draftSortRules[index], draftSortRules[index - 1]];
+            renderSortRules();
+          });
+          row.querySelector("[data-sort-down]").addEventListener("click", () => {
+            if (index >= draftSortRules.length - 1) return;
+            [draftSortRules[index + 1], draftSortRules[index]] = [draftSortRules[index], draftSortRules[index + 1]];
+            renderSortRules();
+          });
+          row.querySelector("[data-sort-remove]").addEventListener("click", () => { draftSortRules.splice(index, 1); renderSortRules(); });
+        });
+      }
+
+      function openDisplaySettings() {
+        nameDisplayMode.value = displaySettings.nameMode;
+        displayDensity.value = String(displaySettings.density);
+        featuredPriority.checked = displaySettings.featuredFirst;
+        draftSortRules = displaySettings.sortRules.map(rule => ({ ...rule }));
+        updateDensityOutput();
+        renderSortRules();
+        displayDialog.showModal();
+      }
+
+      function resetDisplayDraft() {
+        nameDisplayMode.value = defaultDisplaySettings.nameMode;
+        displayDensity.value = String(defaultDisplaySettings.density);
+        featuredPriority.checked = defaultDisplaySettings.featuredFirst;
+        draftSortRules = [];
+        updateDensityOutput();
+        renderSortRules();
+      }
+
+      function syncControls() {
+        const categoryButtons = [{ id: "all", name: "全部" }, ...categories, { id: "uncategorized", name: "未分类" }];
+        categoryTabs.innerHTML = categoryButtons.map(category => `<button class="filter-pill ${activeCategory === category.id ? "active" : ""}" type="button" data-category-filter="${escapeHtml(category.id)}">${escapeHtml(category.name)}</button>`).join("");
+        categoryTabs.querySelectorAll("[data-category-filter]").forEach(button => button.addEventListener("click", () => {
+          activeCategory = button.dataset.categoryFilter;
+          render();
+        }));
+
+        const currentTag = activeTag;
+        tagFilter.innerHTML = `<option value="">全部标签</option>${allTags().map(tag => `<option value="${escapeHtml(tag)}" ${tag === currentTag ? "selected" : ""}>${escapeHtml(tag)}</option>`).join("")}`;
+        if (currentTag && !allTags().includes(currentTag)) activeTag = "";
+
+        document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === viewMode));
+        document.querySelectorAll("[data-days]").forEach(button => {
+          const days = Number(button.dataset.days);
+          const expectedAge = days * 86400000;
+          const age = Date.now() - recentStart;
+          const isActive = days === 0 ? recentStart === 0 : Math.abs(age - expectedAge) < 60000;
+          button.classList.toggle("active", isActive);
+        });
+        filterbar.classList.toggle("sidebar-mode", viewMode === "sidebar");
+        recentControls.classList.toggle("visible", viewMode === "recent");
+        recentStartInput.value = toLocalInputValue(recentStart);
+        bulkModeButton.classList.toggle("active", bulkMode);
+        bulkModeButton.textContent = bulkMode ? "退出批量编辑" : "批量编辑";
+        bulkBar.classList.toggle("visible", bulkMode);
+        bulkSummary.textContent = `已选择 ${selectedIds.size} 个网站`;
+        openBulkDialogButton.disabled = selectedIds.size === 0;
+      }
+
+      function toLocalInputValue(timestamp) {
+        if (!timestamp) return "";
+        const date = new Date(timestamp - new Date(timestamp).getTimezoneOffset() * 60000);
+        return date.toISOString().slice(0, 16);
+      }
+
+      function filteredSites() {
+        const query = searchInput.value.trim().toLocaleLowerCase("zh-CN");
+        return sortSites(sites.filter(site => {
+          const categoryMatches = activeCategory === "all" || (activeCategory === "uncategorized" ? !site.categoryId : site.categoryId === activeCategory);
+          const tagMatches = !activeTag || site.tags.includes(activeTag);
+          const searchText = [site.name, site.url, site.note, categoryName(site.categoryId), ...site.tags].join(" ").toLocaleLowerCase("zh-CN");
+          return categoryMatches && tagMatches && (!query || searchText.includes(query));
+        }));
+      }
+
+      function renderCard(site) {
+        const safeUrl = normalizeUrl(site.url);
+        const monogram = Array.from(site.name.trim())[0] || "网";
+        const tagMarkup = site.tags.map(tag => `<span class="tag-chip">${escapeHtml(tag)}</span>`).join("");
+        const iconUrl = site.iconData || faviconUrl(site.url);
+        const iconMarkup = `<div class="site-icon ${site.iconData ? "custom" : ""}" aria-hidden="true"><img data-site-icon src="${escapeHtml(iconUrl)}" alt=""><span class="site-icon-fallback">${escapeHtml(monogram)}</span></div>`;
+        return `
+          <article class="site-card ${site.featured ? "featured" : ""} ${selectedIds.has(site.id) ? "selected" : ""}" data-site-id="${escapeHtml(site.id)}">
+            <div>
+              <div class="card-head">
+                <label class="selection-box" aria-label="选择 ${escapeHtml(site.name)}"><input type="checkbox" data-select-site ${selectedIds.has(site.id) ? "checked" : ""}></label>
+                <div class="site-identity">
+                  ${iconMarkup}
+                  <div class="site-title">
+                    <a href="${escapeHtml(safeUrl || "#")}" target="_blank" rel="noopener noreferrer" data-track-open>${escapeHtml(site.name)}</a>
+                    <div class="site-host">${escapeHtml(displayHost(site.url))}</div>
+                  </div>
+                </div>
+                <div class="card-actions">
+                  <button class="icon-button feature-button ${site.featured ? "featured" : ""}" type="button" data-feature aria-label="${site.featured ? "取消特别关注" : "特别关注"} ${escapeHtml(site.name)}" aria-pressed="${site.featured}" title="${site.featured ? "取消特别关注" : "特别关注"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg></button>
+                  <button class="icon-button" type="button" data-edit aria-label="编辑 ${escapeHtml(site.name)}" title="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/><path d="m14 7 3 3"/></svg></button>
+                  <button class="icon-button delete" type="button" data-delete-site aria-label="删除 ${escapeHtml(site.name)}" title="删除"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button>
+                </div>
+              </div>
+              <div class="category-and-tags"><span class="category-badge">${escapeHtml(categoryName(site.categoryId))}</span>${tagMarkup}</div>
+            </div>
+            <div class="site-details">
+              <div class="detail-row"><span class="detail-label">备注</span><span class="detail-value note-value ${site.note ? "" : "empty"}">${escapeHtml(site.note || "未填写")}</span></div>
+            </div>
+            <a class="open-button" href="${escapeHtml(safeUrl || "#")}" target="_blank" rel="noopener noreferrer" data-track-open>打开网站<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+          </article>`;
+      }
+
+      function renderRecentCard(item, index, maxCount) {
+        const { site, count, lastVisit } = item;
+        const safeUrl = normalizeUrl(site.url);
+        const monogram = Array.from(site.name.trim())[0] || "网";
+        const iconUrl = site.iconData || faviconUrl(site.url);
+        const percent = Math.max(8, Math.round(count / Math.max(1, maxCount) * 100));
+        return `<article class="site-card recent-card ${site.featured ? "featured" : ""} ${selectedIds.has(site.id) ? "selected" : ""}" data-site-id="${escapeHtml(site.id)}">
+          <label class="selection-box" aria-label="选择 ${escapeHtml(site.name)}"><input type="checkbox" data-select-site ${selectedIds.has(site.id) ? "checked" : ""}></label>
+          <div class="recent-rank">${index + 1}</div>
+          <div class="site-identity">
+            <button class="icon-button feature-button ${site.featured ? "featured" : ""}" type="button" data-feature aria-label="${site.featured ? "取消特别关注" : "特别关注"} ${escapeHtml(site.name)}" aria-pressed="${site.featured}" title="${site.featured ? "取消特别关注" : "特别关注"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg></button>
+            <div class="site-icon ${site.iconData ? "custom" : ""}" aria-hidden="true"><img data-site-icon src="${escapeHtml(iconUrl)}" alt=""><span class="site-icon-fallback">${escapeHtml(monogram)}</span></div>
+            <div class="site-title"><a href="${escapeHtml(safeUrl || "#")}" target="_blank" rel="noopener noreferrer" data-track-open>${escapeHtml(site.name)}</a><div class="site-host">${escapeHtml(displayHost(site.url))} · ${escapeHtml(categoryName(site.categoryId))}</div></div>
+          </div>
+          <div class="visit-stats"><strong>${count} 次访问</strong><span>最近：${escapeHtml(formatVisitTime(lastVisit))}</span><div class="visit-bar"><span style="width:${percent}%"></span></div></div>
+          <a class="open-button" href="${escapeHtml(safeUrl || "#")}" target="_blank" rel="noopener noreferrer" data-track-open>打开网站</a>
+        </article>`;
+      }
+
+      function formatVisitTime(timestamp) {
+        if (!timestamp) return "无记录";
+        return new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(timestamp));
+      }
+
+      function emptyMarkup(hasSites) {
+        return `<section class="empty-state"><h2>${hasSites ? "没有匹配的网站" : "还没有保存网站"}</h2><p>${hasSites ? "换个关键词或筛选条件试试。" : "添加第一个网站，之后就可以从这里快速进入。"}</p><button class="primary-button" type="button" data-empty-add>添加网站</button></section>`;
+      }
+
+      function render() {
+        selectedIds = new Set([...selectedIds].filter(id => sites.some(site => site.id === id)));
+        syncControls();
+        const filtered = filteredSites();
+        const hasFilter = Boolean(searchInput.value.trim() || activeCategory !== "all" || activeTag);
+        currentVisibleIds = filtered.map(site => site.id);
+        resultSummary.innerHTML = hasFilter ? `当前显示 <strong>${filtered.length}</strong> 个网站` : `共 <strong>${sites.length}</strong> 个网站`;
+
+        if (viewMode === "recent") {
+          const ranked = filtered.map(site => {
+            const visits = site.visits.filter(timestamp => timestamp >= recentStart);
+            return { site, count: visits.length, lastVisit: visits.length ? Math.max(...visits) : 0 };
+          }).filter(item => item.count > 0).sort((a, b) => compareSites(a.site, b.site) || b.count - a.count || b.lastVisit - a.lastVisit);
+          currentVisibleIds = ranked.map(item => item.site.id);
+          const maxCount = ranked[0]?.count || 1;
+          siteGrid.className = `site-grid view-list ${bulkMode ? "bulk-mode" : ""}`;
+          siteGrid.innerHTML = ranked.length ? ranked.map((item, index) => renderRecentCard(item, index, maxCount)).join("") : `<section class="empty-state"><h2>这个时间段还没有访问记录</h2><p>从本工具点击打开网站后，访问次数会记录在当前浏览器中。</p></section>`;
+          resultSummary.innerHTML = `统计时间内访问过 <strong>${ranked.length}</strong> 个网站`;
+        } else if (viewMode === "sidebar") {
+          const sidebarItems = [{ id: "all", name: "全部" }, ...categories, { id: "uncategorized", name: "未分类" }];
+          const sidebar = sidebarItems.map(category => {
+            const count = category.id === "all" ? sites.length : sites.filter(site => category.id === "uncategorized" ? !site.categoryId : site.categoryId === category.id).length;
+            return `<button class="sidebar-category ${activeCategory === category.id ? "active" : ""}" type="button" data-sidebar-category="${escapeHtml(category.id)}"><span>${escapeHtml(category.name)}</span><span>${count}</span></button>`;
+          }).join("");
+          siteGrid.className = `category-layout ${bulkMode ? "bulk-mode" : ""}`;
+          siteGrid.innerHTML = `<aside class="category-sidebar"><p class="category-sidebar-title">分类</p>${sidebar}</aside><div class="category-content">${filtered.length ? filtered.map(renderCard).join("") : emptyMarkup(sites.length > 0)}</div>`;
+          siteGrid.querySelectorAll("[data-sidebar-category]").forEach(button => button.addEventListener("click", () => { activeCategory = button.dataset.sidebarCategory; render(); }));
+        } else {
+          siteGrid.className = `site-grid view-${viewMode} ${bulkMode ? "bulk-mode" : ""}`;
+          siteGrid.innerHTML = filtered.length ? filtered.map(renderCard).join("") : emptyMarkup(sites.length > 0);
+        }
+
+        bindSiteActions();
+        const emptyAdd = siteGrid.querySelector("[data-empty-add]");
+        if (emptyAdd) emptyAdd.addEventListener("click", openAddDialog);
+      }
+
+      function bindSiteActions() {
+        siteGrid.querySelectorAll("[data-feature]").forEach(button => button.addEventListener("click", () => toggleFeatured(button.closest("[data-site-id]").dataset.siteId)));
+        siteGrid.querySelectorAll("[data-edit]").forEach(button => button.addEventListener("click", () => openEditDialog(button.closest("[data-site-id]").dataset.siteId)));
+        siteGrid.querySelectorAll("[data-delete-site]").forEach(button => button.addEventListener("click", () => requestDeletion("site", button.closest("[data-site-id]").dataset.siteId)));
+        siteGrid.querySelectorAll("[data-track-open]").forEach(link => link.addEventListener("click", () => recordVisit(link.closest("[data-site-id]").dataset.siteId)));
+        siteGrid.querySelectorAll("[data-select-site]").forEach(input => input.addEventListener("change", () => {
+          const id = input.closest("[data-site-id]").dataset.siteId;
+          input.checked ? selectedIds.add(id) : selectedIds.delete(id);
+          render();
+        }));
+        siteGrid.querySelectorAll("[data-site-icon]").forEach(image => {
+          const fail = () => image.closest(".site-icon").classList.add("failed");
+          image.addEventListener("error", fail, { once: true });
+          if (image.complete && !image.naturalWidth) fail();
+        });
+      }
+
+      function recordVisit(id) {
+        const site = sites.find(item => item.id === id);
+        if (!site) return;
+        site.visits = [...site.visits, Date.now()].slice(-2000);
+        persistSites();
+        setTimeout(render, 0);
+      }
+
+      function toggleFeatured(id) {
+        const site = sites.find(item => item.id === id);
+        if (!site) return;
+        site.featured = !site.featured;
+        persistSites();
+        render();
+        showToast(site.featured ? `已特别关注“${site.name}”` : `已取消特别关注“${site.name}”`);
+      }
+
+      function syncCategorySelect() {
+        const selected = siteCategory.value;
+        const importSelected = importCategory.value;
+        const options = `<option value="">未分类</option>${categories.map(category => `<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`).join("")}`;
+        siteCategory.innerHTML = options;
+        bulkCategory.innerHTML = options;
+        importCategory.innerHTML = `<option value="">使用文件分类；没有则未分类</option>${categories.map(category => `<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`).join("")}`;
+        siteCategory.value = categories.some(category => category.id === selected) ? selected : "";
+        importCategory.value = categories.some(category => category.id === importSelected) ? importSelected : "";
+      }
+
+      function openAddDialog() {
+        siteForm.reset();
+        siteId.value = "";
+        pendingIconData = "";
+        updateIconPreview();
+        syncCategorySelect();
+        if (activeCategory !== "all" && activeCategory !== "uncategorized" && categories.some(category => category.id === activeCategory)) siteCategory.value = activeCategory;
+        urlError.textContent = "";
+        dialogTitle.textContent = "添加网站";
+        siteDialog.showModal();
+        requestAnimationFrame(() => siteName.focus());
+      }
+
+      function openEditDialog(id) {
+        const site = sites.find(item => item.id === id);
+        if (!site) return;
+        syncCategorySelect();
+        siteId.value = site.id;
+        siteName.value = site.name;
+        siteUrl.value = site.url;
+        siteCategory.value = categories.some(category => category.id === site.categoryId) ? site.categoryId : "";
+        siteTags.value = site.tags.join(", ");
+        siteNote.value = site.note;
+        siteFeatured.checked = site.featured;
+        pendingIconData = site.iconData;
+        siteIconFile.value = "";
+        updateIconPreview();
+        urlError.textContent = "";
+        dialogTitle.textContent = "编辑网站";
+        siteDialog.showModal();
+        requestAnimationFrame(() => siteName.focus());
+      }
+
+      function saveSite(input) {
+        const normalized = normalizeUrl(input.url);
+        if (!normalized) throw new Error("请输入有效的 http 或 https 网址");
+        const name = String(input.name || "").trim();
+        if (!name) throw new Error("请填写网站名称");
+        const id = input.id || newId();
+        const existingIndex = sites.findIndex(item => item.id === id);
+        const categoryId = categories.some(category => category.id === input.categoryId) ? input.categoryId : "";
+        const existing = existingIndex >= 0 ? sites[existingIndex] : null;
+        const record = cleanSite({ id, name, url: normalized, categoryId, tags: input.tags, note: String(input.note || "").trim(), iconData: input.iconData || "", featured: Boolean(input.featured), visits: existing?.visits || [], createdAt: existing?.createdAt || Date.now() });
+        if (existingIndex >= 0) sites.splice(existingIndex, 1, record); else sites.unshift(record);
+        registerTags(record.tags);
+        persistSites();
+        render();
+        return record;
+      }
+
+      function updateIconPreview() {
+        if (pendingIconData) {
+          iconPreview.innerHTML = `<img src="${escapeHtml(pendingIconData)}" alt="自定义图标预览">`;
+          removeCustomIcon.disabled = false;
+          return;
+        }
+        const automatic = faviconUrl(siteUrl.value);
+        iconPreview.innerHTML = automatic ? `<img src="${escapeHtml(automatic)}" alt="自动图标预览">` : "自动";
+        const image = iconPreview.querySelector("img");
+        if (image) image.addEventListener("error", () => { iconPreview.textContent = "自动"; }, { once: true });
+        removeCustomIcon.disabled = true;
+      }
+
+      async function prepareIcon(file) {
+        if (!file || !file.type.startsWith("image/")) throw new Error("请选择图片文件");
+        if (file.size > 2 * 1024 * 1024) throw new Error("图标文件不能超过 2 MB");
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("无法读取图标文件"));
+          reader.readAsDataURL(file);
+        });
+        const image = await new Promise((resolve, reject) => {
+          const element = new Image();
+          element.onload = () => resolve(element);
+          element.onerror = () => reject(new Error("无法解析这张图片"));
+          element.src = dataUrl;
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 128;
+        const context = canvas.getContext("2d");
+        context.clearRect(0, 0, 128, 128);
+        const scale = Math.min(128 / image.width, 128 / image.height);
+        const width = Math.max(1, Math.round(image.width * scale));
+        const height = Math.max(1, Math.round(image.height * scale));
+        context.drawImage(image, (128 - width) / 2, (128 - height) / 2, width, height);
+        const result = canvas.toDataURL("image/png");
+        if (result.length > 400000) throw new Error("处理后的图标仍然过大，请换一张图片");
+        return result;
+      }
+
+      function openImportDialog() {
+        importForm.reset();
+        syncCategorySelect();
+        pendingImportFileText = "";
+        pendingImportRows = [];
+        importFileName.textContent = "尚未选择文件";
+        importError.textContent = "";
+        importPreview.classList.remove("visible");
+        importPreviewBody.innerHTML = "";
+        confirmImportButton.disabled = true;
+        importDialog.showModal();
+      }
+
+      function buildFullBackup() {
+        return {
+          format: "website-hub-full-backup",
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          data: {
+            sites: sites.map(site => ({ ...site, tags: [...site.tags], visits: [...site.visits] })),
+            categories: categories.map(category => ({ ...category })),
+            tags: [...tagCatalog],
+            preferences: {
+              viewMode,
+              recentStart,
+              displaySettings: { ...displaySettings, sortRules: displaySettings.sortRules.map(rule => ({ ...rule })) }
+            }
+          }
+        };
+      }
+
+      function downloadBackup(prefix = "website-hub-backup") {
+        const snapshot = buildFullBackup();
+        const stamp = snapshot.exportedAt.replace(/[:T]/g, "-").replace(/\.\d{3}Z$/, "");
+        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `${prefix}-${stamp}.json`;
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return snapshot;
+      }
+
+      function openBackupDialog() {
+        backupForm.reset();
+        pendingRestore = null;
+        restoreFileName.textContent = "尚未选择文件";
+        restoreError.textContent = "";
+        restorePreview.classList.remove("visible");
+        restorePreview.innerHTML = "";
+        restoreConfirmRow.classList.remove("visible");
+        confirmRestoreButton.disabled = true;
+        backupSummary.textContent = `${sites.length} 个网站 · ${categories.length} 个分类 · ${tagCatalog.length} 个标签 · ${sites.reduce((sum, site) => sum + site.visits.length, 0)} 条访问记录`;
+        backupDialog.showModal();
+      }
+
+      function parseFullBackup(value) {
+        let parsed;
+        try { parsed = JSON.parse(value); }
+        catch { throw new Error("文件不是有效的 JSON 备份"); }
+        if (parsed?.format !== "website-hub-full-backup" || parsed?.version !== 1 || !parsed.data) throw new Error("这不是本工具生成的完整备份，或备份版本暂不支持");
+        if (!Array.isArray(parsed.data.sites) || !Array.isArray(parsed.data.categories) || !Array.isArray(parsed.data.tags)) throw new Error("备份缺少网站、分类或标签数据");
+        if (parsed.data.sites.length > 5000) throw new Error("备份中的网站超过 5000 个，无法恢复");
+        if (parsed.data.categories.length > 500) throw new Error("备份中的分类超过 500 个，无法恢复");
+        if (parsed.data.tags.length > 1000) throw new Error("备份中的标签超过 1000 个，无法恢复");
+        if (!parsed.data.sites.every(isSiteShape)) throw new Error("备份中存在结构不完整的网站条目");
+
+        const restoredCategories = parsed.data.categories.map(cleanCategory);
+        const categoryIds = new Set();
+        for (const category of restoredCategories) {
+          if (categoryIds.has(category.id)) throw new Error("备份中存在重复的分类 ID");
+          categoryIds.add(category.id);
+        }
+        const restoredSites = parsed.data.sites.map(site => cleanSite(site));
+        const siteIds = new Set();
+        for (const site of restoredSites) {
+          if (siteIds.has(site.id)) throw new Error("备份中存在重复的网站 ID");
+          siteIds.add(site.id);
+          if (site.categoryId && !categoryIds.has(site.categoryId)) site.categoryId = "";
+        }
+        const restoredTags = parseTags([...parsed.data.tags, ...restoredSites.flatMap(site => site.tags)], 1000);
+        const preferences = parsed.data.preferences || {};
+        const rawDisplay = preferences.displaySettings || {};
+        const restoredDisplay = {
+          nameMode: ["single", "two", "full"].includes(rawDisplay.nameMode) ? rawDisplay.nameMode : defaultDisplaySettings.nameMode,
+          density: Math.min(5, Math.max(1, Math.round(Number(rawDisplay.density) || defaultDisplaySettings.density))),
+          featuredFirst: rawDisplay.featuredFirst !== false,
+          sortRules: normalizeSortRules(rawDisplay.sortRules)
+        };
+        const restoredView = ["grid", "list", "sidebar", "recent"].includes(preferences.viewMode) ? preferences.viewMode : "grid";
+        const restoredRecentStart = Number(preferences.recentStart);
+        const exportedAt = Number.isFinite(Date.parse(parsed.exportedAt)) ? parsed.exportedAt : "";
+        return {
+          sites: restoredSites,
+          categories: restoredCategories,
+          tags: restoredTags,
+          displaySettings: restoredDisplay,
+          viewMode: restoredView,
+          recentStart: Number.isFinite(restoredRecentStart) && restoredRecentStart >= 0 ? restoredRecentStart : Date.now() - 7 * 86400000,
+          exportedAt
+        };
+      }
+
+      async function readRestoreFile(file) {
+        if (!file) return;
+        pendingRestore = null;
+        restoreConfirm.checked = false;
+        restoreConfirmRow.classList.remove("visible");
+        confirmRestoreButton.disabled = true;
+        restorePreview.classList.remove("visible");
+        restoreError.textContent = "";
+        try {
+          if (file.size > 25 * 1024 * 1024) throw new Error("备份文件不能超过 25 MB");
+          const restored = parseFullBackup(await file.text());
+          pendingRestore = restored;
+          restoreFileName.textContent = `${file.name} · ${Math.max(1, Math.round(file.size / 1024))} KB`;
+          const visitCount = restored.sites.reduce((sum, site) => sum + site.visits.length, 0);
+          const iconCount = restored.sites.filter(site => site.iconData).length;
+          const timeText = restored.exportedAt ? new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(restored.exportedAt)) : "未记录";
+          restorePreview.innerHTML = `<strong>备份预览</strong><br>${restored.sites.length} 个网站 · ${restored.categories.length} 个分类 · ${restored.tags.length} 个标签<br>${visitCount} 条访问记录 · ${iconCount} 个自定义图标<br>导出时间：${escapeHtml(timeText)}`;
+          restorePreview.classList.add("visible");
+          restoreConfirmRow.classList.add("visible");
+        } catch (error) {
+          restoreFileName.textContent = file.name || "无法读取文件";
+          restoreError.textContent = error.message;
+        }
+      }
+
+      function storeRestoredBackup(restored) {
+        const nextValues = new Map([
+          [SITE_KEY, JSON.stringify(restored.sites)],
+          [CATEGORY_KEY, JSON.stringify(restored.categories)],
+          [TAG_KEY, JSON.stringify(restored.tags)],
+          [DISPLAY_KEY, JSON.stringify(restored.displaySettings)],
+          [VIEW_KEY, restored.viewMode],
+          [RECENT_KEY, String(restored.recentStart)]
+        ]);
+        const previousValues = new Map([...nextValues.keys()].map(key => [key, localStorage.getItem(key)]));
+        try {
+          nextValues.forEach((value, key) => localStorage.setItem(key, value));
+        } catch (error) {
+          previousValues.forEach((value, key) => value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value));
+          throw new Error("浏览器存储空间不足，恢复没有生效；请保留刚下载的安全备份");
+        }
+      }
+
+      function applyFullRestore() {
+        if (!pendingRestore || !restoreConfirm.checked) return;
+        try {
+          downloadBackup("website-hub-before-restore");
+          storeRestoredBackup(pendingRestore);
+          sites = pendingRestore.sites;
+          categories = pendingRestore.categories;
+          tagCatalog = pendingRestore.tags;
+          displaySettings = pendingRestore.displaySettings;
+          viewMode = pendingRestore.viewMode;
+          recentStart = pendingRestore.recentStart;
+          activeCategory = "all";
+          activeTag = "";
+          bulkMode = false;
+          selectedIds.clear();
+          pendingRestore = null;
+          applyDisplaySettings();
+          backupDialog.close();
+          render();
+          showToast("完整恢复成功；恢复前安全备份已下载");
+        } catch (error) {
+          restoreError.textContent = error.message;
+        }
+      }
+
+      function invalidateImportPreview() {
+        pendingImportRows = [];
+        importPreview.classList.remove("visible");
+        confirmImportButton.disabled = true;
+        importError.textContent = "";
+      }
+
+      async function readImportFile(file) {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) throw new Error("导入文件不能超过 5 MB");
+        pendingImportFileText = await file.text();
+        importText.value = "";
+        importFileName.textContent = `${file.name} · ${Math.max(1, Math.round(file.size / 1024))} KB`;
+        pendingImportRows = [];
+        importPreview.classList.remove("visible");
+        confirmImportButton.disabled = true;
+      }
+
+      function previewImport() {
+        try {
+          const pasted = importText.value.trim();
+          const content = pasted || pendingImportFileText;
+          const fileName = pasted ? "pasted.txt" : (importFile.files[0]?.name || "");
+          pendingImportRows = parseImportContent(content, fileName);
+          renderImportPreview();
+        } catch (error) {
+          pendingImportRows = [];
+          importPreview.classList.remove("visible");
+          confirmImportButton.disabled = true;
+          importError.textContent = error.message;
+        }
+      }
+
+      function ensureCategoryByName(name) {
+        const cleanName = String(name || "").trim().slice(0, 40);
+        if (!cleanName) return "";
+        const existing = categories.find(category => category.name.toLocaleLowerCase("zh-CN") === cleanName.toLocaleLowerCase("zh-CN"));
+        if (existing) return existing.id;
+        const category = cleanCategory({ id: newId(), name: cleanName });
+        categories.push(category);
+        return category.id;
+      }
+
+      function applyImport() {
+        if (!pendingImportRows.length) return previewImport();
+        const seen = new Set();
+        const defaultTags = parseTags(importTags.value);
+        const overrideCategoryId = categories.some(category => category.id === importCategory.value) ? importCategory.value : "";
+        const created = [];
+        let addedCount = 0;
+        let updatedCount = 0;
+        let skippedCount = 0;
+        pendingImportRows.forEach(row => {
+          const state = importRowState(row, seen);
+          if (!state.actionable) { skippedCount += 1; return; }
+          const key = canonicalUrl(row.url);
+          const existingIndex = sites.findIndex(site => canonicalUrl(site.url) === key);
+          const importedCategoryId = overrideCategoryId || ensureCategoryByName(row.categoryName);
+          const hasImportedCategory = Boolean(overrideCategoryId || row.categoryName);
+          if (existingIndex >= 0) {
+            const existing = sites[existingIndex];
+            sites.splice(existingIndex, 1, cleanSite({
+              ...existing,
+              name: row.name || existing.name,
+              url: row.url,
+              categoryId: hasImportedCategory ? importedCategoryId : existing.categoryId,
+              tags: parseTags([...existing.tags, ...row.tags, ...defaultTags]),
+              note: row.note || existing.note
+            }));
+            updatedCount += 1;
+          } else {
+            created.push(cleanSite({ id: newId(), name: row.name, url: row.url, categoryId: importedCategoryId, tags: parseTags([...row.tags, ...defaultTags]), note: row.note, visits: [], createdAt: Date.now() + addedCount }));
+            addedCount += 1;
+          }
+        });
+        sites = [...created, ...sites];
+        registerTags(sites.flatMap(site => site.tags));
+        persistCategories();
+        persistSites();
+        importDialog.close();
+        render();
+        const parts = [];
+        if (addedCount) parts.push(`新增 ${addedCount} 个`);
+        if (updatedCount) parts.push(`更新 ${updatedCount} 个`);
+        if (skippedCount) parts.push(`跳过 ${skippedCount} 条`);
+        showToast(`导入完成：${parts.join("，") || "没有变更"}`);
+      }
+
+      function openBulkEditor() {
+        if (!selectedIds.size) return;
+        syncCategorySelect();
+        bulkForm.reset();
+        bulkDialogSummary.textContent = `将修改 ${selectedIds.size} 个网站。未选择的项目会保持原样。`;
+        bulkDialog.showModal();
+      }
+
+      function applyBulkEdit() {
+        const tagValues = parseTags(bulkTags.value);
+        const noteValue = bulkNote.value.trim();
+        sites = sites.map(site => {
+          if (!selectedIds.has(site.id)) return site;
+          const updated = { ...site };
+          if (bulkCategoryMode.value === "set") updated.categoryId = bulkCategory.value;
+          if (bulkCategoryMode.value === "clear") updated.categoryId = "";
+          if (bulkTagMode.value === "add") updated.tags = parseTags([...site.tags, ...tagValues]);
+          if (bulkTagMode.value === "remove") updated.tags = site.tags.filter(tag => !tagValues.some(value => value.toLocaleLowerCase("zh-CN") === tag.toLocaleLowerCase("zh-CN")));
+          if (bulkTagMode.value === "replace") updated.tags = tagValues;
+          if (bulkNoteMode.value === "append" && noteValue) updated.note = `${site.note}${site.note ? "\n" : ""}${noteValue}`;
+          if (bulkNoteMode.value === "replace") updated.note = noteValue;
+          if (bulkNoteMode.value === "clear") updated.note = "";
+          return cleanSite(updated);
+        });
+        registerTags(tagValues);
+        persistSites();
+        const count = selectedIds.size;
+        selectedIds.clear();
+        bulkDialog.close();
+        render();
+        showToast(`已批量更新 ${count} 个网站`);
+      }
+
+      function deleteSite(id) {
+        const index = sites.findIndex(item => item.id === id);
+        if (index < 0) throw new Error("未找到要删除的网站");
+        const [removed] = sites.splice(index, 1);
+        persistSites();
+        render();
+        return removed;
+      }
+
+      function renderTaxonomyManager() {
+        categoryManagerList.innerHTML = categories.length ? categories.map(category => `
+          <div class="taxonomy-row" data-category-row="${escapeHtml(category.id)}">
+            <input value="${escapeHtml(category.name)}" maxlength="40" aria-label="分类名称">
+            <button class="icon-button small-action" type="button" data-save-category title="保存分类名称" aria-label="保存分类名称"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6"/></svg></button>
+            <button class="icon-button small-action delete" type="button" data-delete-category title="删除分类" aria-label="删除分类"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></svg></button>
+          </div>`).join("") : `<p class="taxonomy-empty">还没有分类</p>`;
+
+        const tags = allTags();
+        tagManagerList.innerHTML = tags.length ? tags.map(tag => `
+          <div class="taxonomy-row" data-tag-row="${escapeHtml(tag)}">
+            <input value="${escapeHtml(tag)}" maxlength="30" aria-label="标签名称">
+            <button class="icon-button small-action" type="button" data-save-tag title="保存标签名称" aria-label="保存标签名称"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6"/></svg></button>
+            <button class="icon-button small-action delete" type="button" data-delete-tag title="删除标签" aria-label="删除标签"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></svg></button>
+          </div>`).join("") : `<p class="taxonomy-empty">还没有标签，可在上方直接创建</p>`;
+
+        categoryManagerList.querySelectorAll("[data-save-category]").forEach(button => button.addEventListener("click", () => {
+          const row = button.closest("[data-category-row]");
+          renameCategory(row.dataset.categoryRow, row.querySelector("input").value);
+        }));
+        categoryManagerList.querySelectorAll("[data-delete-category]").forEach(button => button.addEventListener("click", () => requestDeletion("category", button.closest("[data-category-row]").dataset.categoryRow)));
+        tagManagerList.querySelectorAll("[data-save-tag]").forEach(button => button.addEventListener("click", () => {
+          const row = button.closest("[data-tag-row]");
+          renameTag(row.dataset.tagRow, row.querySelector("input").value);
+        }));
+        tagManagerList.querySelectorAll("[data-delete-tag]").forEach(button => button.addEventListener("click", () => requestDeletion("tag", button.closest("[data-tag-row]").dataset.tagRow)));
+      }
+
+      function addCategory(name) {
+        const cleanName = String(name || "").trim().slice(0, 40);
+        if (!cleanName) throw new Error("请填写分类名称");
+        if (categories.some(category => category.name.toLocaleLowerCase("zh-CN") === cleanName.toLocaleLowerCase("zh-CN"))) throw new Error("已经有同名分类");
+        const category = { id: newId(), name: cleanName };
+        categories.push(category);
+        persistCategories();
+        renderTaxonomyManager();
+        render();
+        return category;
+      }
+
+      function renameCategory(id, name) {
+        const category = categories.find(item => item.id === id);
+        const cleanName = String(name || "").trim().slice(0, 40);
+        if (!category || !cleanName) return showToast("分类名称不能为空");
+        if (categories.some(item => item.id !== id && item.name.toLocaleLowerCase("zh-CN") === cleanName.toLocaleLowerCase("zh-CN"))) return showToast("已经有同名分类");
+        category.name = cleanName;
+        persistCategories();
+        renderTaxonomyManager();
+        render();
+        showToast("分类名称已更新");
+      }
+
+      function renameTag(oldTag, newName) {
+        const cleanName = String(newName || "").trim().slice(0, 30);
+        if (!cleanName) return showToast("标签名称不能为空");
+        if (!tagCatalog.includes(oldTag)) return showToast("没有找到这个标签");
+        tagCatalog = parseTags(tagCatalog.map(tag => tag === oldTag ? cleanName : tag), 1000);
+        sites = sites.map(site => ({ ...site, tags: parseTags(site.tags.map(tag => tag === oldTag ? cleanName : tag)) }));
+        if (activeTag === oldTag) activeTag = cleanName;
+        persistTagCatalog();
+        persistSites();
+        renderTaxonomyManager();
+        render();
+        showToast("标签名称已更新");
+      }
+
+      function addTag(name) {
+        const cleanName = String(name || "").trim().slice(0, 30);
+        if (!cleanName) throw new Error("请填写标签名称");
+        if (tagCatalog.some(tag => tag.toLocaleLowerCase("zh-CN") === cleanName.toLocaleLowerCase("zh-CN"))) throw new Error("已经有同名标签");
+        tagCatalog.push(cleanName);
+        persistTagCatalog();
+        renderTaxonomyManager();
+        render();
+        return cleanName;
+      }
+
+      function requestDeletion(type, value) {
+        pendingDelete = { type, value };
+        if (type === "site") {
+          const site = sites.find(item => item.id === value);
+          if (!site) return;
+          deleteCopy.innerHTML = `将删除网站 <strong>“${escapeHtml(site.name)}”</strong>。当前版本没有回收站，删除后无法恢复。`;
+        } else if (type === "category") {
+          const category = categories.find(item => item.id === value);
+          if (!category) return;
+          deleteCopy.innerHTML = `将删除分类 <strong>“${escapeHtml(category.name)}”</strong>。其中的网站不会删除，会移到“未分类”。`;
+        } else {
+          deleteCopy.innerHTML = `将删除标签 <strong>“${escapeHtml(value)}”</strong>，并从所有网站中移除它。`;
+        }
+        deleteDialog.showModal();
+      }
+
+      function applyPendingDeletion() {
+        if (!pendingDelete) return;
+        const { type, value } = pendingDelete;
+        if (type === "site") {
+          const removed = deleteSite(value);
+          showToast(`已删除“${removed.name}”`);
+        } else if (type === "category") {
+          categories = categories.filter(category => category.id !== value);
+          sites = sites.map(site => site.categoryId === value ? { ...site, categoryId: "" } : site);
+          if (activeCategory === value) activeCategory = "all";
+          persistCategories();
+          persistSites();
+          renderTaxonomyManager();
+          render();
+          showToast("分类已删除，网站已移到未分类");
+        } else {
+          tagCatalog = tagCatalog.filter(tag => tag !== value);
+          sites = sites.map(site => ({ ...site, tags: site.tags.filter(tag => tag !== value) }));
+          if (activeTag === value) activeTag = "";
+          persistTagCatalog();
+          persistSites();
+          renderTaxonomyManager();
+          render();
+          showToast("标签已移除");
+        }
+        pendingDelete = null;
+        deleteDialog.close();
+      }
+
+      function showToast(message) {
+        clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.classList.add("visible");
+        toastTimer = setTimeout(() => toast.classList.remove("visible"), 2200);
+      }
+
+      addButton.addEventListener("click", openAddDialog);
+      backupButton.addEventListener("click", openBackupDialog);
+      importButton.addEventListener("click", openImportDialog);
+      bulkModeButton.addEventListener("click", () => {
+        bulkMode = !bulkMode;
+        if (!bulkMode) selectedIds.clear();
+        render();
+      });
+      searchInput.addEventListener("input", render);
+      tagFilter.addEventListener("change", () => { activeTag = tagFilter.value; render(); });
+      selectVisibleButton.addEventListener("click", () => { currentVisibleIds.forEach(id => selectedIds.add(id)); render(); });
+      clearSelectionButton.addEventListener("click", () => { selectedIds.clear(); render(); });
+      openBulkDialogButton.addEventListener("click", openBulkEditor);
+      $("#manageTaxonomyButton").addEventListener("click", () => { renderTaxonomyManager(); taxonomyDialog.showModal(); });
+      displaySettingsButton.addEventListener("click", openDisplaySettings);
+      displayDensity.addEventListener("input", updateDensityOutput);
+      addSortRuleButton.addEventListener("click", () => {
+        const used = new Set(draftSortRules.map(rule => rule.key));
+        const next = sortCriteria.find(item => !used.has(item.key));
+        if (!next) return;
+        draftSortRules.push({ key: next.key, dir: defaultDirection(next.key) });
+        renderSortRules();
+      });
+      resetDisplayButton.addEventListener("click", resetDisplayDraft);
+      document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => { viewMode = button.dataset.view; localStorage.setItem(VIEW_KEY, viewMode); render(); }));
+      document.querySelectorAll("[data-days]").forEach(button => button.addEventListener("click", () => {
+        const days = Number(button.dataset.days);
+        recentStart = days === 0 ? 0 : Date.now() - days * 86400000;
+        localStorage.setItem(RECENT_KEY, String(recentStart));
+        render();
+      }));
+      recentStartInput.addEventListener("change", () => {
+        const value = Date.parse(recentStartInput.value);
+        if (!Number.isFinite(value)) return showToast("请选择有效的起始时间");
+        recentStart = value;
+        localStorage.setItem(RECENT_KEY, String(recentStart));
+        render();
+      });
+      siteUrl.addEventListener("input", () => { if (!pendingIconData) updateIconPreview(); });
+      siteIconFile.addEventListener("change", async () => {
+        try {
+          pendingIconData = await prepareIcon(siteIconFile.files[0]);
+          updateIconPreview();
+        } catch (error) {
+          siteIconFile.value = "";
+          showToast(error.message);
+        }
+      });
+      removeCustomIcon.addEventListener("click", () => { pendingIconData = ""; siteIconFile.value = ""; updateIconPreview(); });
+      importFile.addEventListener("change", async () => {
+        try { await readImportFile(importFile.files[0]); importError.textContent = ""; }
+        catch (error) { importFile.value = ""; pendingImportFileText = ""; importFileName.textContent = "尚未选择文件"; importError.textContent = error.message; }
+      });
+      exportBackupButton.addEventListener("click", () => { downloadBackup(); showToast("完整备份已下载"); });
+      restoreFile.addEventListener("change", () => readRestoreFile(restoreFile.files[0]));
+      restoreConfirm.addEventListener("change", () => { confirmRestoreButton.disabled = !(pendingRestore && restoreConfirm.checked); });
+      importText.addEventListener("input", invalidateImportPreview);
+      previewImportButton.addEventListener("click", previewImport);
+      parseImportButton.addEventListener("click", previewImport);
+      [importCategory, importTags, duplicateMode].forEach(control => control.addEventListener("change", () => { if (pendingImportRows.length) renderImportPreview(); }));
+      importTags.addEventListener("input", () => { if (pendingImportRows.length) renderImportPreview(); });
+      document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEventListener("click", () => siteDialog.close()));
+      document.querySelectorAll("[data-close-display]").forEach(button => button.addEventListener("click", () => displayDialog.close()));
+      document.querySelectorAll("[data-close-import]").forEach(button => button.addEventListener("click", () => importDialog.close()));
+      document.querySelectorAll("[data-close-backup]").forEach(button => button.addEventListener("click", () => backupDialog.close()));
+      document.querySelectorAll("[data-close-bulk]").forEach(button => button.addEventListener("click", () => bulkDialog.close()));
+      document.querySelectorAll("[data-close-taxonomy]").forEach(button => button.addEventListener("click", () => taxonomyDialog.close()));
+      document.querySelectorAll("[data-close-delete]").forEach(button => button.addEventListener("click", () => { pendingDelete = null; deleteDialog.close(); }));
+
+      categoryAddForm.addEventListener("submit", event => {
+        event.preventDefault();
+        try { const added = addCategory(newCategoryName.value); newCategoryName.value = ""; showToast(`已添加分类“${added.name}”`); }
+        catch (error) { showToast(error.message); }
+      });
+
+      tagAddForm.addEventListener("submit", event => {
+        event.preventDefault();
+        try { const added = addTag(newTagName.value); newTagName.value = ""; showToast(`已添加标签“${added}”`); }
+        catch (error) { showToast(error.message); }
+      });
+
+      siteForm.addEventListener("submit", event => {
+        event.preventDefault();
+        try {
+          const wasEditing = Boolean(siteId.value);
+          const record = saveSite({ id: siteId.value, name: siteName.value, url: siteUrl.value, categoryId: siteCategory.value, tags: siteTags.value, note: siteNote.value, iconData: pendingIconData, featured: siteFeatured.checked });
+          siteDialog.close();
+          showToast(wasEditing ? `已更新“${record.name}”` : `已添加“${record.name}”`);
+        } catch (error) {
+          urlError.textContent = error.message;
+          siteUrl.focus();
+        }
+      });
+
+      displayForm.addEventListener("submit", event => {
+        event.preventDefault();
+        displaySettings = {
+          nameMode: nameDisplayMode.value,
+          density: Math.min(5, Math.max(1, Number(displayDensity.value) || 3)),
+          featuredFirst: featuredPriority.checked,
+          sortRules: normalizeSortRules(draftSortRules)
+        };
+        persistDisplaySettings();
+        applyDisplaySettings();
+        displayDialog.close();
+        render();
+        showToast("显示与排序设置已保存");
+      });
+
+      importForm.addEventListener("submit", event => { event.preventDefault(); applyImport(); });
+      backupForm.addEventListener("submit", event => { event.preventDefault(); applyFullRestore(); });
+
+      bulkForm.addEventListener("submit", event => { event.preventDefault(); applyBulkEdit(); });
+
+      confirmDelete.addEventListener("click", applyPendingDeletion);
+      siteDialog.addEventListener("click", event => { if (event.target === siteDialog) siteDialog.close(); });
+      displayDialog.addEventListener("click", event => { if (event.target === displayDialog) displayDialog.close(); });
+      importDialog.addEventListener("click", event => { if (event.target === importDialog) importDialog.close(); });
+      backupDialog.addEventListener("click", event => { if (event.target === backupDialog) backupDialog.close(); });
+      bulkDialog.addEventListener("click", event => { if (event.target === bulkDialog) bulkDialog.close(); });
+      taxonomyDialog.addEventListener("click", event => { if (event.target === taxonomyDialog) taxonomyDialog.close(); });
+      deleteDialog.addEventListener("click", event => { if (event.target === deleteDialog) { pendingDelete = null; deleteDialog.close(); } });
+
+      function registerWebMcpTools() {
+        const context = document.modelContext;
+        if (!context || typeof context.registerTool !== "function") return;
+        const register = tool => {
+          try { Promise.resolve(context.registerTool(tool)).catch(error => console.warn("WebMCP 工具注册失败", error)); }
+          catch (error) { console.warn("WebMCP 工具注册失败", error); }
+        };
+        const siteProperties = { name: { type: "string" }, url: { type: "string" }, categoryId: { type: "string" }, tags: { type: "array", items: { type: "string" } }, note: { type: "string" }, featured: { type: "boolean" } };
+
+        register({ name: "list_websites", title: "列出网站", description: "读取当前工具中保存的全部网站条目、分类和标签。", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true, untrustedContentHint: true }, execute: () => ({ websites: sites.map(site => ({ ...site })), categories: categories.map(category => ({ ...category })), tags: [...tagCatalog] }) });
+        register({ name: "add_website", title: "添加网站", description: "添加一个网站，并更新页面和本机数据。不得保存密码、验证码或密钥。", inputSchema: { type: "object", properties: siteProperties, required: ["name", "url"], additionalProperties: false }, annotations: { readOnlyHint: false, untrustedContentHint: false }, execute: input => ({ website: saveSite(input) }) });
+        register({ name: "update_website", title: "更新网站", description: "按网站 ID 更新已有条目。", inputSchema: { type: "object", properties: { id: { type: "string" }, ...siteProperties }, required: ["id"], additionalProperties: false }, annotations: { readOnlyHint: false, untrustedContentHint: false }, execute: input => { const current = sites.find(site => site.id === input.id); if (!current) throw new Error("未找到要更新的网站"); return { website: saveSite({ ...current, ...input }) }; } });
+        register({ name: "delete_website", title: "删除网站", description: "按网站 ID 删除条目，当前不可恢复。", inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false }, annotations: { readOnlyHint: false, untrustedContentHint: false }, execute: input => ({ deleted: deleteSite(String(input.id)) }) });
+        register({ name: "add_category", title: "添加分类", description: "创建一个由用户定义的网站分类。", inputSchema: { type: "object", properties: { name: { type: "string" } }, required: ["name"], additionalProperties: false }, annotations: { readOnlyHint: false, untrustedContentHint: false }, execute: input => ({ category: addCategory(input.name) }) });
+        register({ name: "add_tag", title: "添加标签", description: "在独立标签库中创建一个标签，即使暂时没有网站使用它。", inputSchema: { type: "object", properties: { name: { type: "string" } }, required: ["name"], additionalProperties: false }, annotations: { readOnlyHint: false, untrustedContentHint: false }, execute: input => ({ tag: addTag(input.name) }) });
+      }
+
+      persistSites();
+      persistCategories();
+      persistTagCatalog();
+      applyDisplaySettings();
+      render();
+      registerWebMcpTools();
+      if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(error => console.warn("离线缓存注册失败", error)));
+      }
+    })();
+  </script>
+</body>
+</html>
